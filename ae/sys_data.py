@@ -1,33 +1,38 @@
 """
-External System Data Structures
+external system data structures
 ===============================
 
 This module allows your application to easily manage data structures for to interface data flows
 from and onto other/external systems.
 
-A external system can be anything: like e.g.: a database or web server or
-an application or software suite with an interface for data exchanges.
+A external system can be nearly anything: like e.g.: a database or web server or
+an application or software suite with an interface for data exchanges; even data files
+can be used as an external system.
 
-Because the same data can be represented differently on different systems, this module allows you
-to specify individual data structures for each system.
+The same data can be represented differently on different systems. This module allows you
+to specify individual data structures for each system and provides hooks for to easily integrate
+system-specific data conversion functions.
 
-Data Structures
+
+data structures
 ---------------
 
-Using a combination of the class instances that are declared within this module
-allows you to define any kind of data structures - like lists, mappings and trees:
+Use the classes of this module for to define any kind of simple data structures - like lists, mappings and trees:
 
-* A list gets represented by a instance of one of the classes :class:`Records` or :class:`Values`. Each
-  :class:`Records` instance is a collection of 0..n :class:`Record` instances. A :class:`Values` instance
-  is a collection of 1..n :class:`_Field` instances.
+* A list can get represented by a instance of one of the classes :class:`Records` or :class:`Values`. Each
+  :class:`Records` instance is a sequence of 0..n :class:`Record` instances. A :class:`Values` instance
+  is a sequence of 1..n :class:`Value` instances.
 * A mapping get represented by an instance of the class :class:`Record`, whereas each mapping item gets
   represented by an instance of the private class :class:`_Field`.
-* A node of a tree structure can be represented by instances of the classes :class:`Records`, :class:`Values` or
+* A node of a tree structure can be represented by an instance of the classes :class:`Values`, :class:`Records` or
   :class:`Record`.
 
-The root of such a data structure can be defined by an instance of either :class:`Records` or :class:`Record`.
-All the leafs of such a data structure are instances of the :class:`Value` class. The following diagram is
-showing all the possible combinations (of a single system):
+By combining these simple data structures you can build any complex data structures.
+The root of such a complex data structure can be defined by an instance of either :class:`Records` or :class:`Record`.
+
+The leafs of any simple or complex data structure are represented by instances of the :class:`Value` class.
+
+The following diagram is showing a complex data structure with all the possible combinations (of a single system):
 
 .. graphviz::
 
@@ -47,27 +52,47 @@ showing all the possible combinations (of a single system):
         rec3:DA -> "Value (of Field DA)"
     }
 
-The :class:`Record` instance that is placed at highest in a data structure is called the 'root record',
-and the :class:`_Field` instances at the lowest level in a data structure are called the 'leafs'. Each
-leaf is providing a reference to its root record as well as a 'root index' which is a tuple of indexes/keys.
-The items of a root index are either numeric array indexes (for list data structures) or a field name
-string (for records). In the above graph example the record 'Record (root)' is the root record and
-the field DA is a leaf with the root index ("D", 0, 'DA').
 
-Each :class:`_Field` instance can optionally hold for each system a separate value, which
-gets represented by an instance of one of the 4 classes :class:`Records`, :class:`Record`,
-:class:`Values` or :class:`Value`. For to reference a system field value from a root record
-you have to specify the root index of the field and additionally a system id and a direction id.
+data reference index paths
+..........................
+
+A `index path` is is a tuple of indexes/keys that is referencing one part or a value of a data structure.
+
+The items of an index path are either of type int (specifying a list index in a :class:`Values` or
+:class:`Records` instance) or of type str (specifying a field name of a :class:`Record` instance).
+
+E.g. the index path for to reference in the above graph example the field **DA** from the record **Record (root)**
+would be ``('D', 0, 'DA')``. The first item is referencing the field **D** in the root record. The second item **0** is
+referencing the first item of the :class:`Records` instance/value of field **D**, which is a :class:`Record`
+instance. And finally the last item **DA** specifies the field name in this :class:`Record` instance.
+
+The hierarchically highest placed :class:`Record` instance in a data structure is called the `root record`,
+and the :class:`Value` instances at the lowest level in a data structure are the leafs of a
+data structure.
+
+Each :class:`_Field` is providing apart from its field value also a reference to its root record
+as well as a `root index`. The root index is an index path for to reference the :class:`_Field`
+instance from the root record.
+
+If the format/representation of the data value or of any references differs at one of the used systems
+then a :class:`_Field` instance allows you to store a separate system-specific value.
+For to access a system-specific value or reference in your data structure
+you have to specify additionally to the index path also a `system identifier`
+and optionally a `direction identifier`.
 
 
-System Identifiers
-------------------
+system and direction identifiers
+--------------------------------
 
-System Ids are user-defined strings that are uniquely identifying a system and should consist of at least
-two characters (see :data:`_ASP_SYS_MIN_LEN`). The two pre-defined direction ids :data:`FAD_FROM` and
-:data:`FAD_FROM` are specifying the data flow direction: either for pulling data from a system or for
-pushing data onto a system. The methods :meth:`Record.pull` and :meth:`Record.push` are used to move
-and convert system-specific data from/onto a record.
+A `system id` is an user-defined string that is uniquely identifying a system and should consist of at least
+two characters (see :data:`_ASP_SYS_MIN_LEN`).
+
+A `direction id` is specifying the data flow direction. The two pre-defined direction ids are
+:data:`FAD_FROM` for pulling data from a system or
+:data:`FAD_ONTO` for pushing data onto a system.
+
+The methods :meth:`Record.pull` and :meth:`Record.push` of the :class:`Record` class are used to pull/push
+and convert system-specific data from/onto a system.
 """
 import datetime
 import keyword
@@ -76,7 +101,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tupl
 
 from ae.core import correct_email, correct_phone    # type: ignore  # mypy --namespace-packages does not work
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 
 ACTION_INSERT = 'INSERT'        #: insert action
@@ -138,7 +163,7 @@ FieldValCallable = Callable[['_Field', Any], Any]               #: callable with
 
 def aspect_key(type_or_key: str, system: AspectKeyType = '', direction: AspectKeyType = ''
                ) -> AspectKeyType:
-    """ compiles an aspect dict key from the given args
+    """ compiles an aspect key from the given args
 
     :param type_or_key:     either FAT_* type or full key (including already the system and direction)-
     :param system:          system id string (if type_or_key is a pure FAT_* constant).
