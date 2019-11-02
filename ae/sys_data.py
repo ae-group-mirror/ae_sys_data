@@ -101,7 +101,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tupl
 
 from ae.core import correct_email, correct_phone    # type: ignore  # mypy --namespace-packages does not work
 
-__version__ = '0.0.3'
+__version__ = '0.0.4'
 
 
 ACTION_INSERT = 'INSERT'        #: insert action
@@ -906,34 +906,29 @@ class Record(OrderedDict):
     def __str__(self) -> str:
         return f"Record({', '.join(k for k in self.keys())})"
 
-    ''' tried to make mypy happy with these overload declarations, but then flake8 is showing F811
-    @overload
-    def __contains__(self, idx_path: IdxTypes) -> bool: ...
-    @overload
-    def __contains__(self, idx_path: object) -> bool: ...
-    '''
+    # tried to make mypy happy with these overload declarations, but then flake8 is showing F811
+    # @overload
+    # def __contains__(self, idx_path: IdxTypes) -> bool: ...
+    # @overload
+    # def __contains__(self, idx_path: object) -> bool: ...
 
     def __contains__(self, idx_path: Union[IdxTypes, object]) -> bool:
         assert isinstance(idx_path, PATH_TYPES), f"Record.__contains__() expects {PATH_TYPES} in idx_path arg"   # mypy
         item = self.node_child(idx_path)
-        ''' on executing self.pop() no __delitem__ will be called instead python OrderedDict first pops the item
-            then is calling this method, although super().__contains__() still returns True but then calls __getitem__()
-            (again with this instance where the item got already removed from). So next two lines are not helping:
-
-            if not item:
-                item = super().__contains__(idx_path)
-
-            So finally had to over-ride the Record.pop() method.
-        '''
+        # on executing self.pop() no __delitem__ will be called instead python OrderedDict first pops the item
+        # then is calling this method, although super().__contains__() still returns True but then calls __getitem__()
+        # (again with this instance where the item got already removed from). So next two lines are not helping:
+        # if not item:
+        #    item = super().__contains__(idx_path)
+        # So finally had to over-ride the Record.pop() method.
         return bool(item)
 
     def __getitem__(self, key: IdxTypes) -> Any:
         ssd: Dict[str, str] = dict()
         child = self.node_child(key, moan=True, selected_sys_dir=ssd)
-        ''' should actually not happen because with moan=True node_child() will raise AssertionError
-        if child is None:
-            raise KeyError(f"There is no item with the key '{key}' in this Record/OrderedDict ({self})")
-        '''
+        # should actually not happen because with moan=True node_child() will raise AssertionError
+        # if child is None:
+        #    raise KeyError(f"There is no item with the key '{key}' in this Record/OrderedDict ({self})")
         return child if self.field_items or not isinstance(child, _Field) \
             else child.val(system=ssd.get('system', self.system), direction=ssd.get('direction', self.direction))
 
@@ -978,10 +973,10 @@ class Record(OrderedDict):
                     field = fld
                     break
             if not idx2 and field.has_name(idx, selected_sys_dir=selected_sys_dir):
-                return field
+                break
         else:
             assert not moan, msg + f"valid key but got {idx} from idx_path {idx_path}"
-            return None
+            field = None
 
         return field
 
@@ -1674,7 +1669,7 @@ class Record(OrderedDict):
         This method got added because the OrderedDict.pop() method does not call __delitem__() (see also __contains__())
         """
         field = self._fields.get(idx)
-        assert isinstance(field, _Field), f"Record.pop() expects _Field type at {idx}, got {type(field)}"    # mypy
+        # assert isinstance(field, _Field), f"Record.pop() expects _Field type at {idx}, got {type(field)}"    # mypy
         if field:
             super().__delitem__(idx)
         elif default is not None:
@@ -1877,8 +1872,9 @@ class Records(Values):
         if isinstance(key, slice):
             return super().__getitem__(key)     # slice results in list type return
         child = self.node_child(key, moan=True)
-        if child is None:   # mypy: actually not needed because node_child(..moan=True) will raise AssertionError
-            raise KeyError(f"There is no item with the idx_path '{key}' in this Records instance ({self})")
+        # if child is None:
+        #    raise KeyError(f"There is no item with the idx_path '{key}' in this Records instance ({self})")
+        assert child is not None   # mypy: actually not needed because node_child(..moan=True) will raise AssertionError
         return child
 
     def __setitem__(self, key: Union[IdxTypes, slice], value: Any):
@@ -2185,10 +2181,9 @@ class _Field:
 
     def __getitem__(self, key):
         child = self.node_child(key, moan=True)
-        ''' should actually not happen because with moan=True node_child() will raise AssertionError
-        if child is None:
-            raise KeyError(f"There is no item with the idx_path '{key}' in this _Field ({self})")
-        '''
+        # child is None should actually not happen because with moan=True node_child() will raise AssertionError
+        # if child is None:
+        #    raise KeyError(f"There is no item with the idx_path '{key}' in this _Field ({self})")
         return child
 
     def node_child(self, idx_path: IdxTypes, use_curr_idx: Optional[list] = None, moan: bool = False,
@@ -2309,8 +2304,8 @@ class _Field:
         :return:                found user/system value, or None if not found or empty string if value was not set yet.
         """
         value = self.value(system=system, direction=direction, flex_sys_dir=flex_sys_dir)
-        if value is None:
-            return None
+        # mypy - assert below is actually not needed because value of self should never be None
+        assert value is not None
         return value.val(*idx_path, system=system, direction=direction, flex_sys_dir=flex_sys_dir,
                          use_curr_idx=use_curr_idx, **kwargs)
 
@@ -3100,7 +3095,7 @@ class _Field:
         if idx_path:
             field = root_rec.node_child(idx_path, use_curr_idx=use_curr_idx)
         else:
-            field = cast(Value, self)
+            field = self
         val = field.val(system=root_rec.system, direction=root_rec.direction) if field else None
         return val
 

@@ -8,10 +8,11 @@ from typing import cast
 from ae.sys_data import (
     FAD_FROM, FAD_ONTO, FAT_VAL, FAT_REC, FAT_RCX, FAT_SQE, FAT_CAL, FAT_IDX, FAT_CNV,
     ACTION_DELETE, IDX_PATH_SEP, ALL_FIELDS, CALLABLE_SUFFIX,
-    Value, Values, Record, Records, _Field,
+    Value, Values, Record, Records, _Field, IdxTypes,
     aspect_key, aspect_key_system, aspect_key_direction, deeper,
     field_name_idx_path, field_names_idx_paths, idx_path_field_name,
-    compose_current_index, get_current_index, init_current_index, use_current_index, set_current_index, IdxTypes)
+    compose_current_index, get_current_index, init_current_index, use_current_index, set_current_index,
+    use_rec_default_sys_dir)
 
 
 SS = 'Ss'       # test system ids
@@ -254,6 +255,18 @@ class TestHelperMethods:
         assert r.value('fnB', flex_sys_dir=True).current_idx == 2
         assert r.node_child(('fnB', 0)).current_idx == 'sfnA'
 
+    def test_use_rec_default_sys_dir(self):
+        r = Record()
+        r.system = SS
+        r.direction = FAD_FROM
+        assert use_rec_default_sys_dir(r, '', '') == ('', '')
+        assert use_rec_default_sys_dir(r, SS, FAD_FROM) == (SS, FAD_FROM)
+        assert use_rec_default_sys_dir(r, 'Ts', 'Td') == ('Ts', 'Td')
+        assert use_rec_default_sys_dir(r, None, None) == (SS, FAD_FROM)
+
+        assert use_rec_default_sys_dir(None, None, None) == ('', '')
+        assert use_rec_default_sys_dir(None, SS, FAD_FROM) == ('', '')
+
 
 class TestValue:
     def test_typing(self):
@@ -439,10 +452,6 @@ class TestField:
     def test_val_get(self):
         f = _Field(**{FAT_REC: Record(), FAT_RCX: ('test',)})
         assert f.val() == ''
-        # ae: 26-Feb-19 changed Value.val() to return empty string instead of None
-        # assert f.val('test') is None
-        # assert f.val(12, 'sub_field') is None
-        # assert f.val('sub_field', 12, '2nd_sub_field') is None
         assert f.val('test') == ''
         assert f.val(12, 'sub_field') == ''
         assert f.val('sub_field', 12, '2nd_sub_field') == ''
@@ -562,6 +571,16 @@ class TestField:
         assert f.clear_leafs(system=None, direction=None) is f
         assert f.val(system=SX, direction=FAD_ONTO) == 'clear_val'
 
+    def test_parent(self, rec_2f_2s_complete):
+        r = rec_2f_2s_complete
+        f = r.node_child(('fnB', 1, 'sfnB'))
+
+        assert f.parent() is r.node_child(('fnB', 1))
+        assert f.parent(value_types=(Record, )) is r.node_child(('fnB', 1))
+        assert f.parent(value_types=(Records, )) is r.node_child(('fnB', )).value()
+        assert r.node_child(('fnB', )).parent() is r
+        assert r.node_child(('fnA', )).parent() is r
+
     def test_pull(self):
         r = Record(fields=dict(test='xxx'), system=SX, direction=FAD_FROM)
         f = r.node_child(('test',))
@@ -612,15 +631,43 @@ class TestField:
         r.set_env(action=ACTION_DELETE)
         assert f.ina(ACTION_DELETE)
 
-    def test_parent(self, rec_2f_2s_complete):
+    def test_record_field_val(self, rec_2f_2s_complete):
         r = rec_2f_2s_complete
         f = r.node_child(('fnB', 1, 'sfnB'))
 
-        assert f.parent() is r.node_child(('fnB', 1))
-        assert f.parent(value_types=(Record, )) is r.node_child(('fnB', 1))
-        assert f.parent(value_types=(Records, )) is r.node_child(('fnB', )).value()
-        assert r.node_child(('fnB', )).parent() is r
-        assert r.node_child(('fnA', )).parent() is r
+        assert f.record_field_val('fnA') == ''
+        assert f.record_field_val('fnB', 0, 'sfnA') == 'sfA1v'
+        assert f.record_field_val('fnB', 0, 'sfnB') == 'sfB1v'
+        assert f.record_field_val('fnB', 1, 'sfnA') == 'sfA2v'
+        assert f.record_field_val('fnB', 1, 'sfnB') == 'sfB2v'
+
+    def test_system_record_val(self, rec_2f_2s_complete):
+        r = rec_2f_2s_complete
+        f = r.node_child(('fnB', 1, 'sfnB'))
+
+        assert f.system_record_val() == 'sfB2v'
+        assert f.system_record_val('fnA') == ''
+        assert f.system_record_val('fnB', 0, 'sfnA') == 'sfA1v'
+        assert f.system_record_val('fnB', 0, 'sfnB') == 'sfB1v'
+        assert f.system_record_val('fnB', 1, 'sfnA') == 'sfA2v'
+        assert f.system_record_val('fnB', 1, 'sfnB') == 'sfB2v'
+
+    def test_in_actions(self, rec_2f_2s_complete):
+        r = rec_2f_2s_complete
+        f = r.node_child(('fnB', 1, 'sfnB'))
+
+        assert f.in_actions() is False
+        assert f.in_actions('') is True
+
+    def test_current_records_idx(self, rec_2f_2s_complete):
+        r = rec_2f_2s_complete
+        f = r.node_child(('fnB', 1, 'sfnB'))
+
+        assert f.current_records_idx() == 0
+        assert f.current_records_idx(system="Ts") is None
+
+        assert f.crx() == 0
+        assert f.crx(system='Ts') is None
 
 
 class TestRecord:
@@ -1038,6 +1085,8 @@ class TestRecord:
         assert isinstance(f, _Field)
         assert f.val() == 2
         assert len(r) == 1
+
+        assert r.pop('non_existing', f) == f
 
     def test_pull(self):
         r = Record(fields=dict(fnA=-1), field_items=True)
