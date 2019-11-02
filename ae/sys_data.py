@@ -91,7 +91,7 @@ A `direction id` is specifying the data flow direction. The two pre-defined dire
 :data:`FAD_FROM` for pulling data from a system or
 :data:`FAD_ONTO` for pushing data onto a system.
 
-The methods :meth:`Record.pull` and :meth:`Record.push` of the :class:`Record` class are used to pull/push
+The methods :meth:`~Record.pull` and :meth:`~Record.push` of the :class:`Record` class are used to pull/push
 and convert system-specific data from/onto a system.
 """
 import datetime
@@ -101,7 +101,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tupl
 
 from ae.core import correct_email, correct_phone    # type: ignore  # mypy --namespace-packages does not work
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
 
 ACTION_INSERT = 'INSERT'        #: insert action
@@ -149,13 +149,17 @@ _ASP_DIR_LEN = 4                #: aspect key direction string length
 _ASP_SYS_MIN_LEN = 2            #: aspect key system id string length
 
 
+IDX_TYPES: Tuple[Type, ...] = (int, str)            #: tuple of classes/types used for system data index path items
+# PATH_TYPES = IDX_TYPES + (tuple, )
+PATH_TYPES = (int, str, tuple)                      #: path items, plus field name path, plus index path
+
 AspectKeyType = str                                             #: type of a _Field aspect key
 IdxItemType = Union[int, str]                                   #: types of idx_path items
 IdxPathType = Tuple[IdxItemType, ...]                           #: idx_path type
 IdxTypes = Union[IdxItemType, IdxPathType]                      #: types of either idx_path or idx_path items
-NodeType = Union['Record', 'Records']                           #: node types
-ListType = Union['Values', 'Records']                           #: list/sequence types
-ValueType = Union['Value', 'Values', 'Record', 'Records']       #: value types
+NodeType = Union['Record', 'Records']                           #: node types (:data:`NODE_TYPES`)
+ListType = Union['Values', 'Records']                           #: list/sequence types (:data:`LIST_TYPES`)
+ValueType = Union['Value', 'Values', 'Record', 'Records']       #: value types (:data:`VALUE_TYPES`)
 NodeChildType = Union['_Field', 'Record']                       #: node child types
 FieldCallable = Callable[['_Field'], Any]                       #: callable with _Field argument
 FieldValCallable = Callable[['_Field', Any], Any]               #: callable with _Field and additional argument
@@ -170,7 +174,7 @@ def aspect_key(type_or_key: str, system: AspectKeyType = '', direction: AspectKe
     :param direction:       direction string FAD_* constant (if type_or_key is a pure FAT_* constant).
     :return:                compiled aspect key as string.
     """
-    msg = "aspect_key({}, {}, {}) error: ".format(type_or_key, system, direction)
+    msg = f"aspect_key({type_or_key}, {system}, {direction}) error: "
     assert len(type_or_key) >= _ASP_TYPE_LEN, msg + "aspect type is too short"
     assert system == '' or len(system) >= _ASP_SYS_MIN_LEN, msg + "aspect system id is too short"
     assert direction == '' or len(direction) == _ASP_DIR_LEN, msg + "invalid aspect direction length"
@@ -184,7 +188,7 @@ def aspect_key(type_or_key: str, system: AspectKeyType = '', direction: AspectKe
     if len(key) <= _ASP_TYPE_LEN + _ASP_DIR_LEN:
         key += system
 
-    assert key.isidentifier() and not keyword.iskeyword(key), msg + "key '{}' contains invalid characters".format(key)
+    assert key.isidentifier() and not keyword.iskeyword(key), msg + f"key '{key}' contains invalid characters"
     if type_or_key[:_ASP_TYPE_LEN] in ALL_FATS:
         assert key.count(FAD_FROM) <= 1 and key.count(FAD_ONTO) <= 1, msg + "direction duplicates"
 
@@ -299,7 +303,7 @@ def idx_path_field_name(idx_path: IdxPathType, add_sep: bool = False) -> str:
                         if field value is a Record (for to separate the root field name from the sub field name).
     :return:            field name string.
     """
-    assert isinstance(idx_path, (tuple, list)), "idx_field_name(): expects tuple/list, got {}".format(type(idx_path))
+    assert isinstance(idx_path, (tuple, list)), f"idx_path_field_name() expects idx_path as tuple, got {type(idx_path)}"
     last_nam_idx = False
     field_name = ''
     for idx in idx_path:
@@ -331,8 +335,8 @@ def compose_current_index(node: Union[ListType, NodeType], idx_path: IdxPathType
             curr_idx += tuple(idx2)
             break
 
-        n_v = node.value(idx, flex_sys_dir=True)        # mypy
-        assert isinstance(n_v, (Values, Records, Record))   # mypy
+        n_v = node.value(idx, flex_sys_dir=True)        # mypy * 2
+        assert isinstance(n_v, PARENT_TYPES), f"compose_current_index() expects {PARENT_TYPES} at {idx} of {node}"
         node = n_v
         idx_path = idx_path[1:]
 
@@ -375,20 +379,21 @@ def set_current_index(node: Union[ListType, NodeType], idx: Optional[IdxItemType
     :param add:             value to add to list index; will be ignored if `idx` arg get passed.
     :return:                the finally set/new index value.
     """
-    allowed_types = (Values, Records, Record)
     msg = "set_current_index() expects "
-    assert isinstance(node, allowed_types), msg + "node arg of type {}, but got {}".format(allowed_types, type(node))
+    assert isinstance(node, PARENT_TYPES), msg + f"node arg of type {PARENT_TYPES}, but got {type(node)}"
     assert isinstance(idx, IDX_TYPES) ^ isinstance(add, int), msg + "either int/str in idx or int in add"
 
     if idx is None:
-        assert isinstance(node.current_idx, int) and isinstance(add, int)     # mypy (already covered by last assert)
+        # mypy * 2: false positive (already covered by last assert)
+        assert isinstance(node.current_idx, int), msg + f"int type in index {node.current_idx!r}"
+        assert isinstance(add, int), msg + f"int type in add argument: {add!r}"
         idx = node.current_idx + add
 
-    assert isinstance(idx, (int, str))     # mypy
+    assert isinstance(idx, (int, str)), msg + f"int/str type in idx argument: {idx!r}"      # mypy
     node.current_idx = idx
 
     if isinstance(node, LIST_TYPES):
-        assert isinstance(idx, int)     # mypy
+        assert isinstance(idx, int), msg + f"int type for list types in idx argument ({idx!r})"         # mypy
         if node.idx_min is None or idx < node.idx_min:
             node.idx_min = idx
         if node.idx_max is None or idx > node.idx_max:
@@ -420,9 +425,9 @@ def use_current_index(node: Union[ListType, NodeType], idx_path: IdxPathType, us
     elif isinstance(node, Record):
         idx_type = str
     else:
-        assert False, msg + "value type of Values, Records or Record, but got {}".format(type(node))
+        assert False, msg + f"value type of Values, Records or Record, but got {type(node)}"
     if check_idx_type:
-        assert isinstance(idx, idx_type), "index type {} in idx_path[0], but got {}".format(idx_type, type(idx))
+        assert isinstance(idx, idx_type), f"index type {idx_type} in idx_path[0], but got {type(idx)}"
 
     if use_curr_idx:
         for level, val in enumerate(use_curr_idx):
@@ -541,7 +546,7 @@ class Value(list):
                 return super().__setitem__(key, value)
             except (IndexError, TypeError):
                 if not isinstance(key, int):
-                    raise IndexError("Value() expects key of type int, but got {} of type {}".format(key, type(key)))
+                    raise IndexError(f"Value.__setitem__() expects key of type int, but got {key} of type {type(key)}")
                 self.append(value)
 
     def __repr__(self) -> str:
@@ -576,7 +581,7 @@ class Value(list):
         :return:            self or None (if `idx_path` is not empty and `moan` == False).
         """
         if len(idx_path) > 0:
-            assert not moan, "Value instance has no deeper node, but requesting {}".format(idx_path)
+            assert not moan, f"Value instance has no deeper node, but requesting {idx_path}"
             return None
         return self
 
@@ -589,7 +594,7 @@ class Value(list):
         :return:            self or None (if `idx_path` is not empty and `moan` == False).
         """
         assert isinstance(idx_path, (tuple, list)) and len(idx_path) == 0, \
-            "Value.value() expects empty idx_path list, but got {}".format(idx_path)
+            f"Value.value() expects empty idx_path list, but got {idx_path}"
         return self
 
     def val(self, *idx_path, **__):
@@ -613,8 +618,8 @@ class Value(list):
         :return:            self.
         """
         assert isinstance(idx_path, (tuple, list)) and len(idx_path) <= 1, \
-            "Value.set_val({}) idx_path list {} has more than one entry".format(val, idx_path)
-        assert not isinstance(val, VALUE_TYPES), "Value.set_val({}) got unexpected value type {}".format(val, type(val))
+            f"Value.set_val({val}) idx_path list {idx_path} has more than one entry"
+        assert not isinstance(val, VALUE_TYPES), f"Value.set_val({val}) got unexpected value type {type(val)}"
         self[cast(int, idx_path[0]) if isinstance(idx_path, (tuple, list)) and len(idx_path) > 0 else -1] = val
         return self
 
@@ -666,32 +671,31 @@ class Values(list):
         :param selected_sys_dir:    optional dict for to return the currently selected system/direction.
         :return:                    found node instance or None if not found.
         """
-        msg = "node_child() of Values/Records instance {} expects ".format(self)
+        msg = f"node_child() of Values/Records instance {self} expects "
         if isinstance(idx_path, (tuple, list)):
             if len(idx_path) > 0 and not isinstance(idx_path[0], int):
-                assert not moan, msg + "int type in idx_path[0], got {} in {}".format(type(idx_path), idx_path)
+                assert not moan, msg + f"int type in idx_path[0], got {type(idx_path)} in {idx_path}"
                 return None
         elif not isinstance(idx_path, IDX_TYPES):
-            assert not moan, msg + "str or int type in idx_path, got {} in {}".format(type(idx_path), idx_path)
+            assert not moan, msg + f"str or int type in idx_path, got {type(idx_path)} in {idx_path}"
             return None
         else:
             idx_path = field_name_idx_path(idx_path, return_root_fields=True)
 
         if not idx_path:
-            assert not moan, msg + "non-empty tuple or list or index string in idx_path {}".format(idx_path)
+            assert not moan, msg + f"non-empty tuple or list or index string in idx_path {idx_path}"
             return None
 
         idx, *idx2 = use_current_index(self, idx_path, use_curr_idx)
 
         lst_len = len(self)
         if not isinstance(idx, int) or lst_len <= idx:
-            assert not moan, "Values/Records idx_path[0] {!r} is no integer or is not less than the list length {}" \
-                .format(idx, lst_len)
+            assert not moan, f"Values/Records idx_path[0] {idx!r} is no int or is not less than list length {lst_len}"
             return None
 
         if len(idx_path) == 1:
             ret = super().__getitem__(idx)
-            assert ret is not None or not moan, msg + "valid key but got {} from idx_path {}".format(idx, idx_path)
+            assert ret is not None or not moan, msg + f"valid key but got {idx} from idx_path {idx_path}"
             return ret
 
         return self[idx].node_child(idx2, use_curr_idx=use_curr_idx, moan=moan, selected_sys_dir=selected_sys_dir)
@@ -710,7 +714,7 @@ class Values(list):
             return self
 
         idx, *idx2 = idx_path
-        assert isinstance(idx, int)     # mypy
+        assert isinstance(idx, int), f"{type(self)}.value expects int type in idx argument: {idx!r}"     # mypy
         return self[idx].value(*idx2, system=system, direction=direction, **kwargs)
 
     def set_value(self, value: ValueType, *idx_path: IdxItemType,
@@ -730,21 +734,22 @@ class Values(list):
         :param use_curr_idx:    list of counters for to specify if and which current indexes have to be used.
         :return:                self (this instance of :class:`Values` or :class:`Records`).
         """
-        assert len(idx_path) > 0, "Values/Records.set_value(): argument idx_path '{}' is empty".format(idx_path)
+        msg = f"{type(self)}.set_value() expects "
+        assert len(idx_path) > 0, msg + "non-empty value in idx_path argument"
 
         if isinstance(self, Records):
             idx, *idx2 = init_current_index(self, idx_path, use_curr_idx)
             if root_idx:
                 root_idx += (idx,)
-            v_with_set_value = self[idx]    # mypy
-            assert isinstance(v_with_set_value, (Values, Records, Record))     # mypy
+            v_with_set_value = self[idx]                                # mypy
+            assert isinstance(v_with_set_value, PARENT_TYPES), msg + f"{PARENT_TYPES} type in item {idx}"     # mypy
             v_with_set_value.set_value(value, *idx2, system=system, direction=direction, protect=protect,
                                        root_rec=root_rec, root_idx=root_idx, use_curr_idx=use_curr_idx)
         else:
             idx = idx_path[0]
-            assert isinstance(value, Value), "Values.set_value() value must be Value type, got {}".format(type(value))
-            assert len(idx_path) == 1, "Values.set_value() idx_path must be single index, got {}".format(idx_path)
-            assert isinstance(idx, int), "Values.set_value() idx_path index must be int, got {}".format(idx)
+            assert isinstance(value, Value), msg + f" Value type in value argument, got {type(value)}"
+            assert len(idx_path) == 1, msg + f"single index in idx_path argument, got {idx_path}"
+            assert isinstance(idx, int), msg + f"int type in first item of idx_path, got {idx!r}"
             self[idx] = value
         return self
 
@@ -784,7 +789,7 @@ class Values(list):
         :return:                self (this instance of :class:`Values`).
         """
         idx, *idx2 = init_current_index(self, idx_path, use_curr_idx)
-        assert isinstance(idx, int) and len(idx2) == 0, "Values expects one int index, but got {}".format(idx_path)
+        assert isinstance(idx, int) and len(idx2) == 0, f"Values expects one int index, but got {idx_path}"
         value = val if isinstance(val, Value) else Value((val, ))
         list_len = len(self)
         if list_len <= idx:
@@ -876,13 +881,14 @@ class Record(OrderedDict):
         self.current_idx: Optional[str] = None
 
         if template and len(template) > 0:
+            msg = "Record.__init__() expects "
             tpl_rec = template[0]
-            assert isinstance(tpl_rec, Record)  # mypy
+            assert isinstance(tpl_rec, Record), msg + f"Record type in first Records template item {tpl_rec}"  # mypy
             tpl_rec = tpl_rec.copy(deepness=-1, root_rec=root_rec, root_idx=root_idx)
             tpl_rec = tpl_rec.clear_leafs()
             for idx in tpl_rec.keys():
                 field = tpl_rec.node_child((idx, ))
-                assert isinstance(field, _Field)    # mypy
+                assert isinstance(field, _Field), msg + f"_Field type in template Record, got {field}"    # mypy
                 self._add_field(field)
         if fields:
             self.add_fields(fields, root_rec=root_rec, root_idx=root_idx)
@@ -898,7 +904,7 @@ class Record(OrderedDict):
         return ret + ")"
 
     def __str__(self) -> str:
-        return "Record({})".format(", ".join(k for k in self.keys()))
+        return f"Record({', '.join(k for k in self.keys())})"
 
     ''' tried to make mypy happy with these overload declarations, but then flake8 is showing F811
     @overload
@@ -908,7 +914,7 @@ class Record(OrderedDict):
     '''
 
     def __contains__(self, idx_path: Union[IdxTypes, object]) -> bool:
-        assert isinstance(idx_path, (int, str, tuple))   # mypy
+        assert isinstance(idx_path, PATH_TYPES), f"Record.__contains__() expects {PATH_TYPES} in idx_path arg"   # mypy
         item = self.node_child(idx_path)
         ''' on executing self.pop() no __delitem__ will be called instead python OrderedDict first pops the item
             then is calling this method, although super().__contains__() still returns True but then calls __getitem__()
@@ -926,7 +932,7 @@ class Record(OrderedDict):
         child = self.node_child(key, moan=True, selected_sys_dir=ssd)
         ''' should actually not happen because with moan=True node_child() will raise AssertionError
         if child is None:
-            raise KeyError("There is no item with the key '{}' in this Record/OrderedDict ({})".format(key, self))
+            raise KeyError(f"There is no item with the key '{key}' in this Record/OrderedDict ({self})")
         '''
         return child if self.field_items or not isinstance(child, _Field) \
             else child.val(system=ssd.get('system', self.system), direction=ssd.get('direction', self.direction))
@@ -948,17 +954,17 @@ class Record(OrderedDict):
         msg = "Record.node_child() expects "
         if not isinstance(idx_path, (tuple, list)):
             if not isinstance(idx_path, str):
-                assert not moan, msg + "str type in idx_path[0], got {} in {}".format(type(idx_path), idx_path)
+                assert not moan, msg + f"str type in idx_path[0], got {type(idx_path)} in {idx_path}"
                 return None
             idx_path = field_name_idx_path(idx_path, return_root_fields=True)
 
         if not idx_path:
-            assert not moan, msg + "non-empty tuple or list in idx_path {}".format(idx_path)
+            assert not moan, msg + f"non-empty tuple or list in idx_path {idx_path}"
             return None
 
         idx, *idx2 = use_current_index(self, idx_path, use_curr_idx=use_curr_idx)
         if isinstance(idx, int):
-            assert not moan, msg + "str (not int) type in 1st idx_path {} item, got {}".format(idx_path, type(idx_path))
+            assert not moan, msg + f"str (not int) type in 1st idx_path {idx_path} item, got {type(idx_path)}"
             return None     # RETURN item not found (caller doing deep search with integer idx)
 
         # defensive programming: using self._fields.keys() although self._fields.items() gets item via get() in 3.5, for
@@ -974,7 +980,7 @@ class Record(OrderedDict):
             if not idx2 and field.has_name(idx, selected_sys_dir=selected_sys_dir):
                 return field
         else:
-            assert not moan, msg + "valid key but got {} from idx_path {}".format(idx, idx_path)
+            assert not moan, msg + f"valid key but got {idx} from idx_path {idx_path}"
             return None
 
         return field
@@ -996,11 +1002,11 @@ class Record(OrderedDict):
         :param to_value_type:   pass True ensure conversion of `fld_or_val` to a Value instance.
         :return:                self (this Record instance).
         """
+        msg = "Record.set_node_child() expects "
         idx_len = len(idx_path)
-        assert idx_len, "Record.set_node_child() expect 2 or more args - missing field name/-path"
+        assert idx_len, msg + "2 or more args - missing field name/-path"
         assert isinstance(idx_path[0], str), \
-            "First item of Record idx_path '{}', specifying the field name, has to be of type string but is {}" \
-            .format(idx_path, type(idx_path[0]))
+            msg + f"string type in first item of Record idx_path {idx_path}, but got {type(idx_path[0])}"
         if idx_len == 1:
             nam_path = field_name_idx_path(idx_path[0])
             if nam_path:
@@ -1021,16 +1027,15 @@ class Record(OrderedDict):
 
         elif fld_idx in self._fields:
             if idx_len == 1:
-                assert not protect, "set_node_child(): field {} exists; pass protect=False to overwrite".format(fld_idx)
+                assert not protect, msg + f"that the field {fld_idx} does not exist; pass protect=False to overwrite"
                 super().__setitem__(fld_idx, fld_or_val)
                 fld_or_val.set_env(system=system, direction=direction, root_rec=root_rec, root_idx=root_idx)
 
             else:
                 ror = self.value(fld_idx, flex_sys_dir=True)    # if protect==True then should be of Record or Records
                 if not isinstance(ror, NODE_TYPES):
-                    assert not protect, \
-                        "value ({}) of field {} is of {}; expected {} or pass protect arg as False"\
-                        .format(ror, idx_path, type(ror), NODE_TYPES)
+                    assert not protect, msg + f"{NODE_TYPES} type in field value ({ror}[{idx_path}]), got {type(ror)}" \
+                        f"; pass protect argument as False for to convert and overwrite"
                     ror = Record() if isinstance(idx2[0], str) else Records()
                     init_current_index(ror, tuple(idx2), use_curr_idx)
                     self.set_value(ror, fld_idx, root_rec=root_rec, root_idx=root_idx[:-1], use_curr_idx=use_curr_idx)
@@ -1038,7 +1043,8 @@ class Record(OrderedDict):
                                    root_rec=root_rec, root_idx=root_idx, use_curr_idx=use_curr_idx)
 
         elif idx_len == 1:
-            assert isinstance(fld_or_val, _Field) and isinstance(fld_idx, str)     # mypy
+            assert isinstance(fld_or_val, _Field), msg + f"_Field type in {fld_or_val}"             # mypy
+            assert isinstance(fld_idx, str), msg + f"str type in first index path item {fld_idx}"   # mypy
             self._add_field(fld_or_val, fld_idx)
             fld_or_val.set_env(system=system, direction=direction, root_rec=root_rec, root_idx=root_idx)
 
@@ -1051,7 +1057,7 @@ class Record(OrderedDict):
                              use_curr_idx=use_curr_idx, to_value_type=to_value_type)
                 rec = self.node_child(tuple(rec_path), use_curr_idx=use_curr_idx)
             use_current_index(self, idx_path, use_curr_idx, delta=len(rec_path))
-            assert isinstance(rec, Record)      # mypy
+            assert isinstance(rec, Record), msg + f"Record type in {rec_path} child {rec}"      # mypy
             rec.set_node_child(fld_or_val, deep_fld_name, system=system, direction=direction, protect=protect,
                                root_rec=root_rec, root_idx=idx_path[:-1], use_curr_idx=use_curr_idx)
 
@@ -1099,7 +1105,7 @@ class Record(OrderedDict):
         idx, *idx2 = init_current_index(self, idx_path, use_curr_idx)
         root_idx += (idx, )
         field = self.node_child((idx, ))
-        assert isinstance(field, _Field)    # mypy
+        assert isinstance(field, _Field), f"Record.set_value() expects _Field type in {idx} child {field}"    # mypy
         field.set_value(value, *idx2, system=system, direction=direction, protect=protect,
                         root_rec=root_rec, root_idx=root_idx, use_curr_idx=use_curr_idx)
         return self
@@ -1176,7 +1182,7 @@ class Record(OrderedDict):
         else:
             assert extend, "Record.set_val() expects extend=True for to add new fields"
             field = _Field(root_rec=root_rec or self, root_idx=root_idx)
-            assert isinstance(idx, str)     # mypy
+            assert isinstance(idx, str), f"Record.set_val() expects str type in first item of {idx_path}"     # mypy
             self._add_field(field, idx)
             protect = False
 
@@ -1192,16 +1198,16 @@ class Record(OrderedDict):
         :param idx:     name/key/idx string for to map and identify this field (mostly identical to field.name()).
         :return:        self.
         """
-        msg = "_add_field({}, {}): ".format(field, idx)
-        assert isinstance(field, _Field), msg + "field arg has to be of type _Field (not {})".format(type(field))
-        assert isinstance(idx, str), msg + "idx arg has to be of type str (not {})".format(type(idx))
+        msg = f"_add_field({field}, {idx}): "
+        assert isinstance(field, _Field), msg + f"field arg has to be of type _Field (not {type(field)})"
+        assert isinstance(idx, str), msg + f"idx arg has to be of type str (not {type(idx)})"
 
         if idx:
             field.set_name(idx)
         else:
             idx = field.name()
 
-        assert idx not in self._fields, msg + "Record '{}' has already a field with the name '{}'".format(self, idx)
+        assert idx not in self._fields, msg + f"Record '{self}' has already a field with the name '{idx}'"
 
         super().__setitem__(idx, field)     # self._fields[idx] = field
         return self
@@ -1254,7 +1260,7 @@ class Record(OrderedDict):
         """
         msg = "add_system_fields() expects "
         assert isinstance(system_fields, (tuple, list)) and len(system_fields) > 0, \
-            msg + "non-empty list or tuple in system_fields arg, got {}".format(system_fields)
+            msg + f"non-empty list or tuple in system_fields arg, got {system_fields}"
         system, direction = use_rec_default_sys_dir(self, system, direction)
         assert system and direction, msg + "non-empty system/direction values (either from args or self)"
         sys_nam_key = aspect_key(FAT_IDX, system=system, direction=direction)
@@ -1266,14 +1272,13 @@ class Record(OrderedDict):
                                FAT_CNV + FAD_FROM: 4,
                                FAT_CNV + FAD_ONTO: 5}
         else:
-            assert isinstance(sys_fld_indexes, dict), "sys_fld_indexes must be an instance of dict, got {} instead"\
-                .format(type(sys_fld_indexes))
+            assert isinstance(sys_fld_indexes, dict), msg + f"sys_fld_indexes arg as dict, got {type(sys_fld_indexes)}"
             if sys_nam_key not in sys_fld_indexes:  # check if sys name key is specified without self.system
                 sys_nam_key = aspect_key(FAT_IDX, direction=direction)
             assert FAT_IDX in sys_fld_indexes and sys_nam_key in sys_fld_indexes, \
-                msg + "field and system field name aspects in sys_fld_indexes arg {}".format(sys_fld_indexes)
+                msg + f"field and system field name aspects in sys_fld_indexes arg {sys_fld_indexes}"
         err = [_ for _ in system_fields if sys_nam_key not in sys_fld_indexes or sys_fld_indexes[sys_nam_key] >= len(_)]
-        assert not err, msg + "system field name/{} in each system_fields item; missing in {}".format(sys_nam_key, err)
+        assert not err, msg + f"system field name/{sys_nam_key} in each system_fields item; missing in {err}"
 
         for fas in system_fields:
             map_len = len(fas)
@@ -1306,7 +1311,7 @@ class Record(OrderedDict):
                         continue
                     field = _Field(root_rec=self, root_idx=idx_path)
                     field.set_name(field_name)
-                assert isinstance(field, _Field)    # mypy
+                assert isinstance(field, _Field), msg + f"_Field type in {idx_path} child, got {type(field)}"    # mypy
 
                 # add additional aspects: first always add converter and value (for to create separate system value)
                 cnv_func = None
@@ -1387,18 +1392,15 @@ class Record(OrderedDict):
             if idx_path in rec:
                 that_val = rec.compare_val(*idx_path)
                 if this_val != that_val:
-                    dif.append("Different values in Field {}: {}:{!r} != {}:{!r}"
-                               .format(idx_path, self.system, this_val, rec.system, that_val))
+                    dif.append(f"Different val in {idx_path}: {self.system}:{this_val!r} != {rec.system}:{that_val!r}")
             elif this_val:  # silently skip/ignore fields with empty value in this record if field doesn't exist in rec
-                dif.append("Field {}:{}={} does not exist in the other Record"
-                           .format(self.system, idx_path, self.val(*idx_path)))
+                dif.append(f"Field {self.system}:{idx_path}={self.val(*idx_path)} does not exist in the other Record")
 
         for idx_path in rec.leaf_indexes(system='', direction=''):
             if _excluded():
                 continue
             if idx_path not in found_idx:
-                dif.append("Field {}:{}={} does not exist in this Record"
-                           .format(rec.system, idx_path, rec.val(*idx_path)))
+                dif.append(f"Field {rec.system}:{idx_path}={rec.val(*idx_path)} does not exist in this Record")
 
         return dif
 
@@ -1409,7 +1411,8 @@ class Record(OrderedDict):
         :return:            normalized/simplified compare value.
         """
         field = self.node_child(idx_path)
-        assert isinstance(field, _Field)    # mypy
+        assert isinstance(field, _Field), \
+            f"Record.compare_val() expects _Field type at {idx_path}, got {type(field)}"    # mypy
         idx = field.name()
         val = self.val(*idx_path, system='', direction='')
 
@@ -1453,13 +1456,14 @@ class Record(OrderedDict):
                                 by passing a data structure instance (of type :data:`ValueType`).
         :return:                new/extended record instance.
         """
+        msg = "Record.copy() expects "
         new_rec = onto_rec is None
         if new_rec:
             onto_rec = Record()
         if root_rec is None:
             root_rec = onto_rec
-        assert onto_rec is not self, "copy() cannot copy to self (same Record instance)"
-        assert isinstance(onto_rec, Record)  # mypy
+        assert onto_rec is not self, msg + "different Record instance; cannot copy to self (same Record instance)"
+        assert isinstance(onto_rec, Record), msg + f"destination of type Record, got {type(onto_rec)}"  # mypy
 
         for idx, field in self._fields.items():
             if filter_fields:
@@ -1601,13 +1605,14 @@ class Record(OrderedDict):
         :param extend:          pass False to prevent extension of this data structure.
         :return:                self (this :class:`Record` instance).
         """
+        msg = "Record.merge_leafs() expects "
         for idx_path in rec.leaf_indexes(system=system, direction=direction, flex_sys_dir=flex_sys_dir):
             dst_field = self.node_child(idx_path)
             if extend or dst_field:
                 src_field = rec.node_child(idx_path)
-                assert isinstance(src_field, _Field)    # mypy
+                assert isinstance(src_field, _Field), msg + f"_Field type at {idx_path}, got {type(src_field)}"   # mypy
                 if dst_field:
-                    assert isinstance(dst_field, _Field)  # mypy
+                    assert isinstance(dst_field, _Field), msg + f"_Field type at {idx_path}: {type(dst_field)}"   # mypy
                     # noinspection PyProtectedMember
                     dst_field.set_aspects(allow_values=True, **src_field._aspects)
                 elif extend:
@@ -1669,7 +1674,7 @@ class Record(OrderedDict):
         This method got added because the OrderedDict.pop() method does not call __delitem__() (see also __contains__())
         """
         field = self._fields.get(idx)
-        assert isinstance(field, _Field)    # mypy
+        assert isinstance(field, _Field), f"Record.pop() expects _Field type at {idx}, got {type(field)}"    # mypy
         if field:
             super().__delitem__(idx)
         elif default is not None:
@@ -1682,14 +1687,15 @@ class Record(OrderedDict):
         :param from_system:     system id of the system to pull from.
         :return:                self.
         """
-        assert from_system, "Record.pull() with empty value in from_system is not allowed"
+        msg = "Record.pull() expects "
+        assert from_system, msg + "non-empty value in from_system argument"
         for idx_path in self.leaf_indexes(system=from_system, direction=FAD_FROM):    # _fields.values():
             if len(idx_path) >= 3 and isinstance(idx_path[1], int):
                 value = self.value(idx_path[0], system=from_system, direction=FAD_FROM, flex_sys_dir=True)
-                assert isinstance(value, (Values, Record, Records))    # mypy
+                assert isinstance(value, PARENT_TYPES), msg + f"{PARENT_TYPES} type of value at {idx_path[0]}"    # mypy
                 set_current_index(value, idx=idx_path[1])
             field = self.node_child(idx_path)
-            assert isinstance(field, _Field), "Record.pull(): field has to be an instance of _Field"       # mypy
+            assert isinstance(field, _Field), msg + f"_Field type at {idx_path}, got {type(field)}"       # mypy
             field.pull(from_system, self, idx_path)
         return self
 
@@ -1699,10 +1705,11 @@ class Record(OrderedDict):
         :param onto_system:     system id of the system to push to.
         :return:                self.
         """
-        assert onto_system, "Record.push() with empty value in onto_system is not allowed"
+        msg = "Record.push() expects "
+        assert onto_system, msg + "non-empty value in onto_system argument"
         for idx_path in self.leaf_indexes(system=onto_system, direction=FAD_ONTO):
             field = self.node_child(idx_path)
-            assert isinstance(field, _Field), "Record.push(): field has to be an instance of _Field"       # mypy
+            assert isinstance(field, _Field), msg + f"_Field type at {idx_path}, got {type(field)}"       # mypy
             field.push(onto_system, self, idx_path)
         return self
 
@@ -1716,16 +1723,17 @@ class Record(OrderedDict):
         :param idx_add:             increment current system index value with the passed int value.
         :return:                    self (this `Record` instance) if current index got changed, else None.
         """
+        msg = "Record.set_current_system_index() expects "
         prefix = sys_fld_name_prefix + path_sep
         for sys_path, field in self.sys_name_field_map.items():
             if sys_path.startswith(prefix):
                 rec = field.root_rec(system=self.system, direction=self.direction)
-                assert isinstance(rec, Record)  # mypy
+                assert isinstance(rec, Record), msg + f"Record instance as root record, got {type(rec)}"  # mypy
                 idx_path = field.root_idx(system=self.system, direction=self.direction)
                 for off, idx in enumerate(idx_path):
                     if isinstance(idx, int):
                         value = rec.value(*idx_path[:off], flex_sys_dir=True)
-                        assert isinstance(value, (Values, Records, Record))  # mypy
+                        assert isinstance(value, PARENT_TYPES), msg + f"{PARENT_TYPES} type at {idx_path[:off]}"  # mypy
                         set_current_index(value, idx=idx_val, add=idx_add)
                         return self
         return None
@@ -1754,7 +1762,7 @@ class Record(OrderedDict):
         #    field.set_env(system=system, direction=direction, root_rec=root_rec, root_idx=root_idx + (idx,))
         for idx_path in self.leaf_indexes(system=system, direction=direction):
             field = self.node_child(idx_path)
-            assert isinstance(field, _Field), "Record.set_env(): field has to be an instance of _Field"       # mypy
+            assert isinstance(field, _Field), f"Record.set_env() expects _Field type at {idx_path}"       # mypy
             field.set_env(system=system, direction=direction, root_rec=root_rec, root_idx=root_idx + idx_path)
 
         return self
@@ -1812,8 +1820,9 @@ class Record(OrderedDict):
         :param direction:       direction id for to determine included leaf and field val (if put_system_val == True).
         :return:                dict of filtered leaf user/system values with field names/idx_path-tuples as their key.
         """
+        msg = "Record.to_dict() expects "
         assert key_type is None or key_type is tuple or key_type is str, \
-            "Record.to_dict() expects None, tuple or str in key_type argument"
+            msg + "None, tuple or str in key_type argument"
         system, direction = use_rec_default_sys_dir(self, system, direction)
         if push_onto and system:
             self.push(system)
@@ -1821,7 +1830,7 @@ class Record(OrderedDict):
         ret: Dict[IdxTypes, Any] = dict()
         for idx_path in self.leaf_indexes(system=system, direction=direction):
             field = self.node_child(idx_path)
-            assert isinstance(field, _Field), "Record.to_dict(): node_child() doesn't return _Field instance"  # mypy
+            assert isinstance(field, _Field), msg + f"_Field type at {idx_path}, got {type(field)}"  # mypy
             key: IdxTypes = field.name(system=system, direction=direction, flex_sys_dir=False)
             if key and (not filter_fields or not filter_fields(field)):
                 key_path = tuple(idx_path[:-1] + (key,)) if system and use_system_key else idx_path
@@ -1869,7 +1878,7 @@ class Records(Values):
             return super().__getitem__(key)     # slice results in list type return
         child = self.node_child(key, moan=True)
         if child is None:   # mypy: actually not needed because node_child(..moan=True) will raise AssertionError
-            raise KeyError("There is no item with the idx_path '{}' in this Records instance ({})".format(key, self))
+            raise KeyError(f"There is no item with the idx_path '{key}' in this Records instance ({self})")
         return child
 
     def __setitem__(self, key: Union[IdxTypes, slice], value: Any):
@@ -1897,11 +1906,11 @@ class Records(Values):
         :return:                self (this `Records` instance).
         """
         idx_len = len(idx_path)
-        assert idx_len, "Records.set_node_child() idx_path {} too short; expected one or more items".format(idx_path)
+        assert idx_len, f"Records.set_node_child() idx_path {idx_path} too short; expected one or more items"
 
         idx, *idx2 = init_current_index(self, idx_path, use_curr_idx)
         assert isinstance(idx, int), \
-            "Records.set_node_child() 1st item of idx_path {} has to be integer, got {}".format(idx_path, type(idx))
+            f"Records.set_node_child() 1st item of idx_path {idx_path} has to be integer, got {type(idx)}"
 
         for _ in range(idx - len(self) + 1):
             self.append(Record(template=self, root_rec=root_rec, root_idx=root_idx))
@@ -1949,7 +1958,7 @@ class Records(Values):
             return self                                 # RETURN
 
         idx, *idx2 = init_current_index(self, idx_path, use_curr_idx)
-        assert isinstance(idx, int), "Records expects first index of type int, but got {}".format(idx)
+        assert isinstance(idx, int), f"Records expects first index of type int, but got {idx}"
 
         list_len = len(self)
         if root_idx:
@@ -1961,7 +1970,7 @@ class Records(Values):
                 protect = False
 
         if not idx2:
-            assert not protect, "Records.set_val() pass protect=False to overwrite {}".format(idx)
+            assert not protect, f"Records.set_val() pass protect=False to overwrite {idx}"
             # noinspection PyTypeChecker
             # without above: strange PyCharm type hint warning: Type 'int' doesn't have expected attribute '__len__'
             self[idx] = val if isinstance(val, Record) else Record(template=self, fields=val,
@@ -1969,7 +1978,7 @@ class Records(Values):
 
         else:
             rec = self[idx]
-            assert isinstance(rec, Record), "Records can only contain Record instances, got {}".format(type(rec))
+            assert isinstance(rec, Record), f"Records can only contain Record instances, got {type(rec)}"
             rec.set_val(val, *idx2, system=system, direction=direction, flex_sys_dir=flex_sys_dir,
                         protect=protect, extend=extend, converter=converter, root_rec=root_rec, root_idx=root_idx,
                         use_curr_idx=use_curr_idx)
@@ -2025,13 +2034,13 @@ class Records(Values):
                         dif.extend(record_comparator(rec, p_rec))
                 processed_match_keys.append(match_key)
             else:
-                dif.append("Record {} of this Records instance not found via {}; rec={}".format(idx, match_key, rec))
+                dif.append(f"Record {idx} of this Records instance not found via {match_key}; rec={rec}")
 
         for match_key, p_recs in records.match_index.items():
             if match_key in processed_match_keys:
                 continue
             for p_rec in p_recs:
-                dif.append("Pulled Record not found in this Records instance via {}; rec={}".format(match_key, p_rec))
+                dif.append(f"Pulled Record not found in this Records instance via {match_key}; rec={p_rec}")
 
         return dif
 
@@ -2117,7 +2126,7 @@ class _Field:
     """ Internal/Private class used by :class:`Record` for to create record field instances.
 
     An instance of :class:`_Field` is representing one record field. The field properties are internally stored
-    within a private dict (:data:'_Field._aspects) and are called the 'aspects' of a field.
+    within a private dict (:data:`_Field._aspects`) and are called the 'aspects' of a field.
 
     Field aspects get used by a field instance e.g. for to:
     * store field value(s)
@@ -2163,11 +2172,11 @@ class _Field:
             val_key = self.aspect_exists(FAT_VAL,
                                          system=aspect_key_system(idx_key), direction=aspect_key_direction(idx_key))
             if val_key and len(val_key) > _ASP_TYPE_LEN:
-                values += "|" + "{}={}".format(name, self._aspects.get(val_key))
+                values += "|" + f"{name}={self._aspects.get(val_key)}"
             else:
                 names += "|" + name
 
-        return "{}=={}".format(names, values)
+        return f"{names}=={values}"
 
     def __str__(self):
         # return "_Field(" + repr(self._aspects) + ")"
@@ -2178,7 +2187,7 @@ class _Field:
         child = self.node_child(key, moan=True)
         ''' should actually not happen because with moan=True node_child() will raise AssertionError
         if child is None:
-            raise KeyError("There is no item with the idx_path '{}' in this _Field ({})".format(key, self))
+            raise KeyError(f"There is no item with the idx_path '{key}' in this _Field ({self})")
         '''
         return child
 
@@ -2192,24 +2201,24 @@ class _Field:
         :param selected_sys_dir:    optional dict for to return the currently selected system/direction.
         :return:                    found node instance or None if not found.
         """
-        msg = "node_child() of _Field {} expects ".format(self)
+        msg = f"node_child() of _Field {self} expects "
         if isinstance(idx_path, (tuple, list)):
             if len(idx_path) > 0 and not isinstance(idx_path[0], IDX_TYPES):
-                assert not moan, msg + "str or int in idx_path[0], got {} ({})".format(type(idx_path[0]), idx_path[0])
+                assert not moan, msg + f"str or int in idx_path[0], got {type(idx_path[0])} ({idx_path[0]})"
                 return None
         elif not isinstance(idx_path, IDX_TYPES):
-            assert not moan, msg + "str or int type in idx_path, but got {} (idx={})".format(type(idx_path), idx_path)
+            assert not moan, msg + f"str or int type in idx_path, but got {type(idx_path)} (idx={idx_path})"
             return None
         else:
             idx_path = field_name_idx_path(idx_path, return_root_fields=True)
 
         if not idx_path:
-            assert not moan, msg + "non-empty tuple or list or index string in idx_path {}".format(idx_path)
+            assert not moan, msg + f"non-empty tuple or list or index string in idx_path {idx_path}"
             return None
 
         value = self.aspect_value(FAT_VAL)
         if not isinstance(value, VALUE_TYPES):
-            assert not moan, msg + " value types {} but got {}".format(VALUE_TYPES, type(value))
+            assert not moan, msg + f"value type of {VALUE_TYPES} but got {type(value)}"
             return None
 
         return value.node_child(idx_path, use_curr_idx=use_curr_idx, moan=moan, selected_sys_dir=selected_sys_dir)
@@ -2235,8 +2244,8 @@ class _Field:
             else:
                 value = val_or_cal
         assert not flex_sys_dir and value is None or isinstance(value, VALUE_TYPES), \
-            "_Field.value({}, {}, {}, {}): value '{}'/'{}' has to be of type {}" \
-            .format(idx_path, system, direction, flex_sys_dir, val_or_cal, value, VALUE_TYPES)
+            f"_Field.value({idx_path}, {system}, {direction}, {flex_sys_dir}): value '{val_or_cal}'/'{value}'" \
+            f" has to be of type {VALUE_TYPES}"
         if value and len(idx_path) > 0:
             value = value.value(*idx_path, system=system, direction=direction, flex_sys_dir=flex_sys_dir)
         return value
@@ -2257,8 +2266,8 @@ class _Field:
         :param use_curr_idx:    list of counters for to specify if and which current indexes have to be used.
         :return:                self (this _Field instance).
         """
-        msg = "_Field.set_value({}, {}, {}, {}, {}): ".format(value, idx_path, system, direction, protect)
-        assert isinstance(value, VALUE_TYPES), msg + "expects value types {}, got {}".format(VALUE_TYPES, type(value))
+        msg = f"_Field.set_value({value}, {idx_path}, {system}, {direction}, {protect}): "
+        assert isinstance(value, VALUE_TYPES), msg + f"expects value types {VALUE_TYPES}, got {type(value)}"
 
         if isinstance(value, NODE_TYPES) and not idx_path and (system != '' or direction != ''):
             fld_sys = fld_dir = ''
@@ -2266,18 +2275,18 @@ class _Field:
             fld_sys, fld_dir = system, direction
 
         r_rec = self.root_rec(system=fld_sys, direction=fld_dir)
-        assert isinstance(r_rec, Record)    # mypy
+        assert isinstance(r_rec, Record), msg + f"expects Record type for root rec, got {type(r_rec)}"    # mypy
         root_rec, root_idx = use_rec_default_root_rec_idx(r_rec, root_rec,
                                                           idx=self.root_idx(system=fld_sys, direction=fld_dir),
                                                           root_idx=root_idx,
                                                           met=msg)
-        assert root_rec is not None and root_idx, msg + "root Record {} or index {} missing".format(root_rec, root_idx)
+        assert root_rec is not None and root_idx, msg + f"root Record {root_rec} or index {root_idx} missing"
 
         key = aspect_key(FAT_VAL, system=fld_sys, direction=fld_dir)
 
         if not idx_path:
             assert not protect or key not in self._aspects, \
-                msg + "value key {} already exists as aspect ({})".format(key, self._aspects[key])
+                msg + f"value key {key} already exists as aspect ({self._aspects[key]})"
             self._aspects[key] = value
             self.set_env(system=system, direction=direction, root_rec=root_rec, root_idx=root_idx)
         else:
@@ -2342,8 +2351,8 @@ class _Field:
                     or isinstance(val, (list, dict)) and to_value_type \
                     or value is None \
                     or not isinstance(value, Value):
-                assert extend and not protect, "_Field.set_val({}): value {} exists - pass extend={}/protect={}" \
-                                .format(val, value, extend, protect)
+                assert extend and not protect, \
+                    f"_Field.set_val({val}): value {value} exists - pass extend={extend}/protect={protect}"
                 value = val if val_is_value \
                     else (Record() if isinstance(val, dict)
                           else ((Records() if isinstance(val[0], dict) else Values()) if isinstance(val, list)
@@ -2357,8 +2366,8 @@ class _Field:
                 return self             # RETURN
 
         elif isinstance(value, (Value, type(None))):
-            assert extend and not protect, "_Field.set_val({}, {}): value {} exists - change extend={}/protect={}" \
-                .format(val, idx_path, value, extend, protect)
+            assert extend and not protect, \
+                f"_Field.set_val({val}, {idx_path}): value {value} exists - change extend={extend}/protect={protect}"
             value = Record() if isinstance(idx_path[0], str) \
                 else (Records() if idx_len > 1 or isinstance(val, dict) else Values())
             init_current_index(value, idx_path, use_curr_idx)
@@ -2440,8 +2449,8 @@ class _Field:
             for aspect_type in aspect_types:
                 keys.append(aspect_key(aspect_type, system=system, direction=direction))
         else:
-            assert not direction, "_Field.find_aspect_key({}, {}, {}) direction without system not allowed" \
-                .format(aspect_types, system, direction)
+            assert not direction, \
+                f"_Field.find_aspect_key({aspect_types}, {system}, {direction}) direction without system not allowed"
             if system:
                 for aspect_type in aspect_types:
                     for chk_dir in (FAD_ONTO, FAD_FROM):
@@ -2488,7 +2497,7 @@ class _Field:
         :return:                self (this :class:`_Field` instance).
         """
         r_rec = self.root_rec()
-        assert isinstance(r_rec, Record)    # mypy
+        assert isinstance(r_rec, Record), f"_Field.set_system_root_rec_idx() expects root record of Record type"  # mypy
         root_rec, root_idx = use_rec_default_root_rec_idx(r_rec, root_rec,
                                                           idx=self.root_idx(), root_idx=root_idx,
                                                           met="_Field.set_system_root_rec")
@@ -2579,10 +2588,9 @@ class _Field:
         :return:                self (this :class:`_Field` instance).
         """
         key = aspect_key(type_or_key, system=system, direction=direction)
-        msg = "_Field.set_aspect({}, {}, {}, {}, {}, {}): ".format(
-            aspect_value, type_or_key, system, direction, protect, allow_values)
+        msg = f"_Field.set_aspect({aspect_value}, {type_or_key}, {system}, {direction}, {protect}, {allow_values}): "
         assert not protect or key not in self._aspects, \
-            msg + "{} already exists as {}, pass protect=True to overwrite".format(key, self._aspects[key])
+            msg + f"{key} already exists as {self._aspects[key]}, pass protect=True to overwrite"
         assert allow_values or not key.startswith(FAT_VAL), \
             msg + "pass allow_values=True or set values of _Field instances with the methods set_value() or set_val()"
 
@@ -2590,7 +2598,7 @@ class _Field:
             self.del_aspect(key)
         else:
             assert key != FAT_IDX or isinstance(aspect_value, (tuple, list)) or not field_name_idx_path(aspect_value), \
-                msg + "digits cannot be used in system-less/generic field name '{}'".format(aspect_value)
+                msg + f"digits cannot be used in system-less/generic field name '{aspect_value}'"
             self._aspects[key] = aspect_value
         return self
 
@@ -2603,8 +2611,8 @@ class _Field:
         """
         for key, data in aspects.items():
             if key.endswith(CALLABLE_SUFFIX):
-                assert callable(data), "_Field.set_aspects() expects callable for aspect {} with the {}-suffix" \
-                    .format(key, CALLABLE_SUFFIX)
+                assert callable(data), \
+                    f"_Field.set_aspects() expects callable for aspect {key} with the {CALLABLE_SUFFIX}-suffix"
                 key = key[:-len(CALLABLE_SUFFIX)]
                 data = data(self)
             self.set_aspect(data, key, allow_values=allow_values)
@@ -2811,7 +2819,7 @@ class _Field:
         """
         converter = self.converter(system=system, direction=direction)
         if converter:
-            assert callable(converter), "converter of Field {} for {}{} is not callable".format(self, direction, system)
+            assert callable(converter), f"converter of Field {self} for {direction}{system} is not callable"
             val = converter(self, val)
         return val
 
@@ -2881,7 +2889,7 @@ class _Field:
         :param root_idx:        root index to this node/:class:`_Field` instance.
         :return:                self (this :class:`_Field` instance).
         """
-        assert callable(validator), "validator of Field {} for {}{} has to be callable".format(self, direction, system)
+        assert callable(validator), f"validator of Field {self} for {direction}{system} has to be callable"
         self._ensure_system_value(system, direction=direction, root_rec=root_rec, root_idx=root_idx)
         return self.set_aspect(validator, FAT_CHK, system=system, direction=direction, protect=protect)
 
@@ -2907,15 +2915,16 @@ class _Field:
         :param root_idx:        root index to this node/:class:`_Field` instance.
         :return:                added/appended :class:`Record` instance.
         """
+        msg = "_Field.append_record() expects "
         value = self.aspect_value(FAT_VAL, system=system, direction=direction, flex_sys_dir=flex_sys_dir)
-        assert isinstance(value, Records), "append_record() expects Records type but got {}".format(type(value))
+        assert isinstance(value, Records), msg + f"Records type in value {value} but got {type(value)}"
         r_rec = self.root_rec(system=system, direction=direction)
-        assert isinstance(r_rec, Record)    # mypy
+        assert isinstance(r_rec, Record), msg + f"root record of type Record, got {type(r_rec)}"    # mypy
         root_rec, root_idx = use_rec_default_root_rec_idx(r_rec, root_rec,
                                                           idx=self.root_idx(system=system, direction=direction),
                                                           root_idx=root_idx,
                                                           met="_Fields.append_record")
-        assert isinstance(root_rec, Record), "_Field.append_record(): root_rec has to be of type Record"
+        assert isinstance(root_rec, Record), msg + f"root_rec of type Record, got {type(root_rec)}"
         return value.append_record(root_rec=root_rec, root_idx=root_idx)
 
     def clear_leafs(self, system: AspectKeyType = '', direction: AspectKeyType = '', flex_sys_dir: bool = True,
@@ -3068,7 +3077,7 @@ class _Field:
         This method has an alias named :meth:`.rfv`.
         """
         root_rec = self.root_rec(system=system, direction=direction)
-        assert root_rec and idx_path, "rfv() expects non-empty root_rec {} and idx_path {}".format(root_rec, idx_path)
+        assert root_rec and idx_path, f"rfv() expects non-empty root_rec {root_rec} and idx_path {idx_path}"
         val = root_rec.val(*idx_path, system=system, direction=direction)
         return val
 
@@ -3087,7 +3096,7 @@ class _Field:
         This method has an alias named :meth:`.srv`.
         """
         root_rec: Optional[Record] = self.root_rec(system=system, direction=direction)
-        assert root_rec, "srv() expects existing root_rec for system {} and direction {}".format(system, direction)
+        assert root_rec, f"srv() expects existing root_rec for system {system} and direction {direction}"
         if idx_path:
             field = root_rec.node_child(idx_path, use_curr_idx=use_curr_idx)
         else:
@@ -3131,7 +3140,11 @@ class _Field:
 
 
 VALUE_TYPES = (Value, Values, Record, Records)      #: tuple of classes/types used for system data values
+
+# LIST_TYPES: Tuple[Type, ...] = (Values, Records)      -- typed tuple does not work in mypy with isinstance() restrict
+LIST_TYPES = (Values, Records)                      #: tuple of classes/types used for system data lists
 NODE_TYPES = (Record, Records)                      #: tuple of classes/types used for system data nodes
 NODE_CHILD_TYPES = (_Field, Record)                 #: tuple of classes/types used for system data node children
-LIST_TYPES = (Values, Records)                      #: tuple of classes/types used for system data lists
-IDX_TYPES = (int, str)                              #: tuple of classes/types used for system data index path items
+
+# PARENT_TYPES = tuple(set(LIST_TYPES + NODE_TYPES))    -- does not work for mypy with isinstance() type restrict
+PARENT_TYPES = (Values, Record, Records)            #: value types that can have children (Value excluded)
