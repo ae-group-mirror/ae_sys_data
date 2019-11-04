@@ -30,7 +30,7 @@ mypy:
     - mkdir -p ./mypy_report
     - python -m mypy -v --namespace-packages --show-error-codes --show-error-context --show-column-numbers --pretty
       --lineprecision-report mypy_report ae
-    - anybadge --label=MyPy --value=checked --file=mypy_report/mypy.svg -o
+    - anybadge --label=MyPy --value=passed --file=mypy_report/mypy.svg -o
     - ls -l -R
   artifacts:
     paths:

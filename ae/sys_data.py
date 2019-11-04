@@ -101,7 +101,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tupl
 
 from ae.core import correct_email, correct_phone    # type: ignore  # mypy --namespace-packages does not work
 
-__version__ = '0.0.5'
+__version__ = '0.0.6'
 
 
 ACTION_INSERT = 'INSERT'        #: insert action
