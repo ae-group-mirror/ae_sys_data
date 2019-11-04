@@ -6,7 +6,8 @@
 
 [![GitLabPipeline](https://img.shields.io/gitlab/pipeline/ae-group/ae_sys_data/master?logo=python)](
     https://gitlab.com/ae-group/ae_sys_data)
-[![PyPIVersion](https://img.shields.io/pypi/v/ae_sys_data)](https://pypi.org/project/ae-sys_data/#history)
+[![PyPIVersion](https://img.shields.io/pypi/v/ae_sys_data)](
+    https://pypi.org/project/ae-sys_data/#history)
 
 >The portions (modules and sub-packages) of the Application Environment for Python are within
 the `ae` namespace and are providing helper methods and classes for to develop
@@ -16,14 +17,21 @@ full-featured applications with Python.
     https://ae-group.gitlab.io/ae_sys_data/coverage/ae_sys_data_py.html)
 [![MyPyPrecision](https://ae-group.gitlab.io/ae_sys_data/mypy.svg)](
     https://ae-group.gitlab.io/ae_sys_data/lineprecision.txt)
-[![PyLintScore](https://ae-group.gitlab.io/ae_sys_data/pylint.svg)](https://ae-group.gitlab.io/ae_sys_data/pylint.log)
+[![PyLintScore](https://ae-group.gitlab.io/ae_sys_data/pylint.svg)](
+    https://ae-group.gitlab.io/ae_sys_data/pylint.log)
 
-[![PyPIImplementation](https://img.shields.io/pypi/implementation/ae_sys_data)](https://pypi.org/project/ae-sys_data/)
-[![PyPIPyVersions](https://img.shields.io/pypi/pyversions/ae_sys_data)](https://pypi.org/project/ae-sys_data/)
-[![PyPIWheel](https://img.shields.io/pypi/wheel/ae_sys_data)](https://pypi.org/project/ae-sys_data/)
-[![PyPIFormat](https://img.shields.io/pypi/format/ae_sys_data)](https://pypi.org/project/ae-sys_data/)
-[![PyPIStatus](https://img.shields.io/pypi/status/ae_sys_data)](https://libraries.io/pypi/ae-sys_data)
-[![PyPIDownloads](https://img.shields.io/pypi/dm/ae_sys_data)](https://pypi.org/project/ae-sys_data/#files)
+[![PyPIImplementation](https://img.shields.io/pypi/implementation/ae_sys_data)](
+    https://pypi.org/project/ae-sys_data/)
+[![PyPIPyVersions](https://img.shields.io/pypi/pyversions/ae_sys_data)](
+    https://pypi.org/project/ae-sys_data/)
+[![PyPIWheel](https://img.shields.io/pypi/wheel/ae_sys_data)](
+    https://pypi.org/project/ae-sys_data/)
+[![PyPIFormat](https://img.shields.io/pypi/format/ae_sys_data)](
+    https://pypi.org/project/ae-sys_data/)
+[![PyPIStatus](https://img.shields.io/pypi/status/ae_sys_data)](
+    https://libraries.io/pypi/ae-sys_data)
+[![PyPIDownloads](https://img.shields.io/pypi/dm/ae_sys_data)](
+    https://pypi.org/project/ae-sys_data/#files)
 
 
 ## Installation
@@ -56,5 +64,6 @@ More info on the features and usage of this portion are available at
 [ReadTheDocs](https://ae.readthedocs.io/en/latest/_autosummary/ae.sys_data.html#module-ae.sys_data
 "ae_sys_data documentation").
 
-<!-- initial upload of ae_sys_data module version 0.0.1.
+<!-- Common files version 0.0.33 deployed (with 0.0.33)
+     to the ae_sys_data module version 0.0.6.
 -->
