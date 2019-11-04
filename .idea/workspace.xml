@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="41cfda61-5c99-4117-a959-ea762b0c4b76" name="Default Changelist" comment="V 0.0.4: added more tests for 100% coverage, removed unused type hints">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ae/sys_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/ae/sys_data.py" afterDir="false" />
     </list>
