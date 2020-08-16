@@ -1,2 +1,2 @@
 # dependencies of the sys_data portion
-ae_core
+ae_valid

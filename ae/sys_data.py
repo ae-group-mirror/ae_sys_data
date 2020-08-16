@@ -30,7 +30,7 @@ Use the classes of this module for to define any kind of simple data structures 
 By combining these simple data structures you can build any complex data structures.
 The root of such a complex data structure can be defined by an instance of either :class:`Records` or :class:`Record`.
 
-The leafs of any simple or complex data structure are represented by instances of the :class:`Value` class.
+The leaves of any simple or complex data structure are represented by instances of the :class:`Value` class.
 
 The following diagram is showing a complex data structure with all the possible combinations (of a single system):
 
@@ -67,7 +67,7 @@ referencing the first item of the :class:`Records` instance/value of field **D**
 instance. And finally the last item **DA** specifies the field name in this :class:`Record` instance.
 
 The hierarchically highest placed :class:`Record` instance in a data structure is called the `root record`,
-and the :class:`Value` instances at the lowest level in a data structure are the leafs of a
+and the :class:`Value` instances at the lowest level in a data structure are the leaves of a
 data structure.
 
 Each :class:`_Field` is providing apart from its field value also a reference to its root record
@@ -99,9 +99,10 @@ import keyword
 from collections import OrderedDict
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union, Generator, Type, cast
 
-from ae.core import correct_email, correct_phone    # type: ignore  # mypy --namespace-packages does not work
+from ae.valid import correct_email, correct_phone       # type: ignore  # mypy --namespace-packages does not work
 
-__version__ = '0.0.7'
+
+__version__ = '0.0.8'
 
 
 ACTION_INSERT = 'INSERT'        #: insert action
@@ -118,7 +119,7 @@ ACTION_COMPARE = 'COMPARE'      #: compare action
 # field aspect types/prefixes
 FAT_IDX = 'idx'                 #: main/system field name within parent Record or list index within Records/Values
 FAT_VAL = 'vle'                 #: main/system field value - storing one of the VALUE_TYPES instance
-FAT_CLEAR_VAL = 'vwc'           #: field default/clear value (init by _Field.set_clear_val(), used by clear_leafs())
+FAT_CLEAR_VAL = 'vwc'           #: field default/clear value (init by _Field.set_clear_val(), used by clear_leaves())
 FAT_REC = 'rrd'                 #: root Record instance
 FAT_RCX = 'rrx'                 #: field index path (idx_path) from the root Record instance
 FAT_CAL = 'clc'                 #: calculator callable
@@ -630,7 +631,7 @@ class Value(list):
         """
         return Value(super().copy())
 
-    def clear_leafs(self, **__):
+    def clear_leaves(self, **__):
         """ clear/reset the value of this instance.
 
         use self[-1] = '' for to clear only the newest/top val.
@@ -820,10 +821,10 @@ class Values(list):
             ret.append(rec)
         return ret
 
-    def clear_leafs(self, system: AspectKeyType = '', direction: AspectKeyType = '', flex_sys_dir: bool = True,
-                    reset_lists: bool = True
-                    ) -> Union['Values', 'Records']:
-        """ clear/reset the user/system values of all the leafs of this :class:`Values`/:class:`Records` instance.
+    def clear_leaves(self, system: AspectKeyType = '', direction: AspectKeyType = '', flex_sys_dir: bool = True,
+                     reset_lists: bool = True
+                     ) -> Union['Values', 'Records']:
+        """ clear/reset the user/system values of all the leaves of this :class:`Values`/:class:`Records` instance.
 
         :param system:          system id.
         :param direction:       direction id (FAD_* constants).
@@ -834,7 +835,7 @@ class Values(list):
         if reset_lists:
             self[1:] = []
         for rec in self:
-            rec.clear_leafs(system=system, direction=direction, flex_sys_dir=flex_sys_dir, reset_lists=reset_lists)
+            rec.clear_leaves(system=system, direction=direction, flex_sys_dir=flex_sys_dir, reset_lists=reset_lists)
         if len(self) > 0:
             self.current_idx = self.idx_min = 0
             self.idx_max = len(self) - 1
@@ -885,7 +886,7 @@ class Record(OrderedDict):
             tpl_rec = template[0]
             assert isinstance(tpl_rec, Record), msg + f"Record type in first Records template item {tpl_rec}"  # mypy
             tpl_rec = tpl_rec.copy(deepness=-1, root_rec=root_rec, root_idx=root_idx)
-            tpl_rec = tpl_rec.clear_leafs()
+            tpl_rec = tpl_rec.clear_leaves()
             for idx in tpl_rec.keys():
                 field = tpl_rec.node_child((idx, ))
                 assert isinstance(field, _Field), msg + f"_Field type in template Record, got {field}"    # mypy
@@ -1364,7 +1365,7 @@ class Record(OrderedDict):
 
         return self.collected_system_fields
 
-    def compare_leafs(self, rec: 'Record', field_names: Iterable = (), exclude_fields: Iterable = ()) -> List[str]:
+    def compare_leaves(self, rec: 'Record', field_names: Iterable = (), exclude_fields: Iterable = ()) -> List[str]:
         """ compare the leaf 'compare' values of this :class:`Record` instance with the one passed into `rec`.
 
         'Compare values' are simplified user/system values generated by :meth:`Record.compare_val`.
@@ -1488,9 +1489,9 @@ class Record(OrderedDict):
 
         return onto_rec
 
-    def clear_leafs(self, system: AspectKeyType = '', direction: AspectKeyType = '', flex_sys_dir: bool = True,
-                    reset_lists: bool = True
-                    ) -> 'Record':
+    def clear_leaves(self, system: AspectKeyType = '', direction: AspectKeyType = '', flex_sys_dir: bool = True,
+                     reset_lists: bool = True
+                     ) -> 'Record':
         """ clear the leaf values including this :class:`Record` instance and all deeper data structures.
 
         :param system:          system id (pass None to use default system id of this `Record` instance).
@@ -1500,12 +1501,12 @@ class Record(OrderedDict):
         :return:
         """
         for field in self._fields.values():
-            field.clear_leafs(system=system, direction=direction, flex_sys_dir=flex_sys_dir, reset_lists=reset_lists)
+            field.clear_leaves(system=system, direction=direction, flex_sys_dir=flex_sys_dir, reset_lists=reset_lists)
         return self
 
-    def leafs(self, system: AspectKeyType = None, direction: AspectKeyType = None, flex_sys_dir: bool = True
-              ) -> Generator['_Field', None, None]:
-        """ generate leafs/_Field-instances of this :class:`Record` instance.
+    def leaves(self, system: AspectKeyType = None, direction: AspectKeyType = None, flex_sys_dir: bool = True
+               ) -> Generator['_Field', None, None]:
+        """ generate leaves/_Field-instances of this :class:`Record` instance.
 
         :param system:          system id (pass None to use default system id of this `Record` instance).
         :param direction:       direction id (pass None to use default direction id of this `Record` instance).
@@ -1514,7 +1515,7 @@ class Record(OrderedDict):
         """
         system, direction = use_rec_default_sys_dir(self, system, direction)
         for field in self._fields.values():
-            yield from field.leafs(system=system, direction=direction, flex_sys_dir=flex_sys_dir)
+            yield from field.leaves(system=system, direction=direction, flex_sys_dir=flex_sys_dir)
 
     def leaf_indexes(self, *idx_path: IdxItemType, system: AspectKeyType = None, direction: AspectKeyType = None,
                      flex_sys_dir: bool = True) -> Generator[IdxPathType, None, None]:
@@ -1542,7 +1543,7 @@ class Record(OrderedDict):
         :param field_names:     field names to include; pass empty tuple (==default) to include all fields.
         :param exclude_fields:  field names to exclude.
         :param name_type:       type of name to be included/returned - see available name types underneath.
-        :return:                tuple of field names/indexes of the included/found leafs.
+        :return:                tuple of field names/indexes of the included/found leaves.
 
         Possible values for the `name_type` argument are:
 
@@ -1558,7 +1559,7 @@ class Record(OrderedDict):
         """
         names = list()
         ret_name: IdxTypes
-        for field in self.leafs(system=system, direction=direction, flex_sys_dir=False):
+        for field in self.leaves(system=system, direction=direction, flex_sys_dir=False):
             idx_path = field.root_idx(system=system, direction=direction)
             if not template_idx_path(idx_path):
                 continue
@@ -1588,10 +1589,10 @@ class Record(OrderedDict):
 
         return tuple(names)
 
-    def merge_leafs(self, rec: 'Record',
-                    system: AspectKeyType = '', direction: AspectKeyType = '', flex_sys_dir: bool = True,
-                    extend: bool = True) -> 'Record':
-        """ merge the leafs of the other record in `rec` into this :class:`Record` instance.
+    def merge_leaves(self, rec: 'Record',
+                     system: AspectKeyType = '', direction: AspectKeyType = '', flex_sys_dir: bool = True,
+                     extend: bool = True) -> 'Record':
+        """ merge the leaves of the other record in `rec` into this :class:`Record` instance.
 
         :param rec:             other `Record` to merge into this one.
         :param system:          system id (pass None to use default system id of this `Record` instance).
@@ -1600,7 +1601,7 @@ class Record(OrderedDict):
         :param extend:          pass False to prevent extension of this data structure.
         :return:                self (this :class:`Record` instance).
         """
-        msg = "Record.merge_leafs() expects "
+        msg = "Record.merge_leaves() expects "
         for idx_path in rec.leaf_indexes(system=system, direction=direction, flex_sys_dir=flex_sys_dir):
             dst_field = self.node_child(idx_path)
             if extend or dst_field:
@@ -1982,14 +1983,14 @@ class Records(Values):
         return self
 
     def append_record(self, root_rec: Record, root_idx: IdxPathType = (), from_rec: Optional[Record] = None,
-                      clear_leafs: bool = True) -> Record:
+                      clear_leaves: bool = True) -> Record:
         """ add/append Record to this :class:`Records` instance.
 
         :param root_rec:        root Record instance of this data structure.
         :param root_idx:        root index to this node/Records instance.
         :param from_rec:        :class:`Record` instance to append, if not passed then use a copy of the first/template
                                 Record of this :class:`Records` instance, else create new :class:`Record` instance.
-        :param clear_leafs:     pass False to not clear the leaf values.
+        :param clear_leaves:    pass False to not clear the leaf values.
         :return:                added/appended :class:`Record` instance.
         """
         assert isinstance(root_rec, Record), "Records.append_record() expects Record instance in the root_rec arg"
@@ -2000,8 +2001,8 @@ class Records(Values):
         new_rec = tpl_rec.copy(deepness=-1, root_rec=root_rec, root_idx=root_idx + (recs_len,))
         self.append(new_rec)
 
-        if clear_leafs:
-            new_rec.clear_leafs()       # clear fields and set init/default values
+        if clear_leaves:
+            new_rec.clear_leaves()      # clear fields and set init/default values
 
         return new_rec
 
@@ -2025,7 +2026,7 @@ class Records(Values):
             match_key = rec.match_key(match_fields)
             if match_key in records.match_index:
                 for p_rec in records.match_index[match_key]:
-                    dif.extend(rec.compare_leafs(p_rec, field_names=field_names, exclude_fields=exclude_fields))
+                    dif.extend(rec.compare_leaves(p_rec, field_names=field_names, exclude_fields=exclude_fields))
                     if callable(record_comparator):
                         dif.extend(record_comparator(rec, p_rec))
                 processed_match_keys.append(match_key)
@@ -2054,9 +2055,9 @@ class Records(Values):
                 self.match_index[match_key] = [rec]
         return self
 
-    def leafs(self, system: AspectKeyType = '', direction: AspectKeyType = '', flex_sys_dir: bool = True
-              ) -> Generator['_Field', None, None]:
-        """ generate leafs/_Field-instances of this :class:`Records` instance.
+    def leaves(self, system: AspectKeyType = '', direction: AspectKeyType = '', flex_sys_dir: bool = True
+               ) -> Generator['_Field', None, None]:
+        """ generate leaves/_Field-instances of this :class:`Records` instance.
 
         :param system:          system id (pass None to use default system id of the underlying `Record` instances).
         :param direction:       direction id (pass None to use default direction of the underlying `Record` instances).
@@ -2064,7 +2065,7 @@ class Records(Values):
         :return:                leaf/_Field-instance generator.
         """
         for rec in self:
-            yield from rec.leafs(system=system, direction=direction, flex_sys_dir=flex_sys_dir)
+            yield from rec.leaves(system=system, direction=direction, flex_sys_dir=flex_sys_dir)
 
     def leaf_indexes(self, *idx_path: IdxItemType, system: AspectKeyType = '', direction: AspectKeyType = '',
                      flex_sys_dir: bool = True) -> Generator[IdxPathType, None, None]:
@@ -2391,9 +2392,9 @@ class _Field:
             value = None
         return value
 
-    def leafs(self, system: AspectKeyType = '', direction: AspectKeyType = '', flex_sys_dir: bool = True
-              ) -> Generator['_Field', None, None]:
-        """ generate all sub-leafs/_Field-instances underneath this :class:`_Field` instance.
+    def leaves(self, system: AspectKeyType = '', direction: AspectKeyType = '', flex_sys_dir: bool = True
+               ) -> Generator['_Field', None, None]:
+        """ generate all sub-leaves/_Field-instances underneath this :class:`_Field` instance.
 
         :param system:          system id ('' stands for the main/system-independent value).
         :param direction:       direction id ('' stands for the main/system-independent value).
@@ -2402,7 +2403,7 @@ class _Field:
         """
         value = self.leaf_value(system=system, direction=direction, flex_sys_dir=flex_sys_dir)
         if isinstance(value, NODE_TYPES):
-            yield from value.leafs(system=system, direction=direction, flex_sys_dir=flex_sys_dir)
+            yield from value.leaves(system=system, direction=direction, flex_sys_dir=flex_sys_dir)
         elif value is not None:
             yield self
 
@@ -2492,7 +2493,7 @@ class _Field:
         :return:                self (this :class:`_Field` instance).
         """
         r_rec = self.root_rec()
-        assert isinstance(r_rec, Record), f"_Field.set_system_root_rec_idx() expects root record of Record type"  # mypy
+        assert isinstance(r_rec, Record), "_Field.set_system_root_rec_idx() expects root record of Record type"  # mypy
         root_rec, root_idx = use_rec_default_root_rec_idx(r_rec, root_rec,
                                                           idx=self.root_idx(), root_idx=root_idx,
                                                           met="_Field.set_system_root_rec")
@@ -2922,8 +2923,8 @@ class _Field:
         assert isinstance(root_rec, Record), msg + f"root_rec of type Record, got {type(root_rec)}"
         return value.append_record(root_rec=root_rec, root_idx=root_idx)
 
-    def clear_leafs(self, system: AspectKeyType = '', direction: AspectKeyType = '', flex_sys_dir: bool = True,
-                    reset_lists: bool = True) -> '_Field':
+    def clear_leaves(self, system: AspectKeyType = '', direction: AspectKeyType = '', flex_sys_dir: bool = True,
+                     reset_lists: bool = True) -> '_Field':
         """ clear/reset field values and if reset_lists == True also Records/Values lists to one item.
 
         :param system:          system of the field value to clear, pass None for to clear all field values.
@@ -2933,7 +2934,7 @@ class _Field:
         :return:                self (this _Field instance).
         """
         def _clr_val(_sys, _dir, _fsd):
-            asp_val.clear_leafs(system=_sys, direction=_dir, flex_sys_dir=_fsd, reset_lists=reset_lists)
+            asp_val.clear_leaves(system=_sys, direction=_dir, flex_sys_dir=_fsd, reset_lists=reset_lists)
             clr_val = self.clear_val(system=_sys, direction=_dir)
             if clr_val is not None:
                 self.set_val(clr_val, system=_sys, direction=_dir, flex_sys_dir=False)

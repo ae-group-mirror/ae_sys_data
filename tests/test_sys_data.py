@@ -12,7 +12,8 @@ from ae.sys_data import (
     aspect_key, aspect_key_system, aspect_key_direction, deeper,
     field_name_idx_path, field_names_idx_paths, idx_path_field_name,
     compose_current_index, get_current_index, init_current_index, use_current_index, set_current_index,
-    use_rec_default_sys_dir)
+    use_rec_default_sys_dir
+)
 
 
 SS = 'Ss'       # test system ids
@@ -294,7 +295,7 @@ class TestValue:
         assert v.initialized
         assert v.value() == ['tvA']
         assert v.val() == 'tvA'
-        v.clear_leafs()
+        v.clear_leaves()
         assert v.value() == []
         assert v.val() == ''
 
@@ -553,22 +554,22 @@ class TestField:
         is_valid = False
         assert not f.validate(None)
 
-    def test_clear_leafs(self):
+    def test_clear_leaves(self):
         r = Record(fields=dict(test='xxx'), system=SX, direction=FAD_ONTO)
         f = r.node_child(('test',))
 
         r.add_system_fields((('tsf', 'test', 'clear_val'),))
         assert f.val() == 'clear_val'
 
-        assert f.clear_leafs(system=None, direction=None) is f
+        assert f.clear_leaves(system=None, direction=None) is f
         assert f.val() == 'clear_val'
 
         f.set_val('new_val')
-        assert f.clear_leafs(system=None, direction=None) is f
+        assert f.clear_leaves(system=None, direction=None) is f
         assert f.val() == 'clear_val'
 
         f.set_val('new_val', system=SX, direction=FAD_ONTO, flex_sys_dir=False)
-        assert f.clear_leafs(system=None, direction=None) is f
+        assert f.clear_leaves(system=None, direction=None) is f
         assert f.val(system=SX, direction=FAD_ONTO) == 'clear_val'
 
     def test_parent(self, rec_2f_2s_complete):
@@ -608,7 +609,7 @@ class TestField:
         assert f.push(SX, r, ('test', )) is f
         assert f.val(system=SX, direction=FAD_ONTO, flex_sys_dir=False) == ''
 
-    def test_system_record_val(self, rec_2f_2s_complete):
+    def test_system_record_val_add_fields(self, rec_2f_2s_complete):
         r = rec_2f_2s_complete.set_env(system=SX, direction=FAD_FROM)
         f = r.node_child(('fnA',))
         r.add_system_fields((('fnAXx', 'fnA', 'Av'), ('fnBXx', 'fnB'), ('sfnAXx', 'fnB0sfnA'), ('sfnBXx', 'fnB0sfnB')))
@@ -620,7 +621,25 @@ class TestField:
         assert f.srv('fnB', 0, 'sfnA') == 'sfA1v'
         assert f.srv('fnB', 1, 'sfnA') == 'sfA2v'
 
-    def test_in_actions(self, rec_2f_2s_complete):
+    def test_system_record_val_node_child(self, rec_2f_2s_complete):
+        r = rec_2f_2s_complete
+        f = r.node_child(('fnB', 1, 'sfnB'))
+
+        assert f.system_record_val() == 'sfB2v'
+        assert f.system_record_val('fnA') == ''
+        assert f.system_record_val('fnB', 0, 'sfnA') == 'sfA1v'
+        assert f.system_record_val('fnB', 0, 'sfnB') == 'sfB1v'
+        assert f.system_record_val('fnB', 1, 'sfnA') == 'sfA2v'
+        assert f.system_record_val('fnB', 1, 'sfnB') == 'sfB2v'
+
+    def test_in_actions_basics(self, rec_2f_2s_complete):
+        r = rec_2f_2s_complete
+        f = r.node_child(('fnB', 1, 'sfnB'))
+
+        assert f.in_actions() is False
+        assert f.in_actions('') is True
+
+    def test_in_actions_with_del(self, rec_2f_2s_complete):
         r = rec_2f_2s_complete.set_env(system=SX, direction=FAD_FROM)
         f = r.node_child(('fnA',))
 
@@ -640,24 +659,6 @@ class TestField:
         assert f.record_field_val('fnB', 0, 'sfnB') == 'sfB1v'
         assert f.record_field_val('fnB', 1, 'sfnA') == 'sfA2v'
         assert f.record_field_val('fnB', 1, 'sfnB') == 'sfB2v'
-
-    def test_system_record_val(self, rec_2f_2s_complete):
-        r = rec_2f_2s_complete
-        f = r.node_child(('fnB', 1, 'sfnB'))
-
-        assert f.system_record_val() == 'sfB2v'
-        assert f.system_record_val('fnA') == ''
-        assert f.system_record_val('fnB', 0, 'sfnA') == 'sfA1v'
-        assert f.system_record_val('fnB', 0, 'sfnB') == 'sfB1v'
-        assert f.system_record_val('fnB', 1, 'sfnA') == 'sfA2v'
-        assert f.system_record_val('fnB', 1, 'sfnB') == 'sfB2v'
-
-    def test_in_actions(self, rec_2f_2s_complete):
-        r = rec_2f_2s_complete
-        f = r.node_child(('fnB', 1, 'sfnB'))
-
-        assert f.in_actions() is False
-        assert f.in_actions('') is True
 
     def test_current_records_idx(self, rec_2f_2s_complete):
         r = rec_2f_2s_complete
@@ -1124,11 +1125,11 @@ class TestRecord:
     def test_add_system_fields_basic(self, rec_2f_2s_complete):
         r = rec_2f_2s_complete.set_env(system=SX, direction=FAD_FROM)
         assert len(r) == 2
-        assert len(list(r.leafs())) == 5
+        assert len(list(r.leaves())) == 5
 
         r.add_system_fields((('fnAXx', 'fnA'), ('sfnX1Xx', 'fnX0sfnX1')))
         assert len(r) == 3
-        assert len(list(r.leafs())) == 6
+        assert len(list(r.leaves())) == 6
         assert r.node_child('fnA').name(system=SX, direction=FAD_FROM) == 'fnAXx'
         assert r.node_child('fnB0sfnA').name(system=SX, direction=FAD_FROM) == 'sfnA'
         assert r.node_child('fnB0sfnB').name(system=SX, direction=FAD_FROM) == 'sfnB'
@@ -1136,7 +1137,7 @@ class TestRecord:
 
         r.add_system_fields((('sfnAXx', 'fnB0sfnA'), ('sfnX2Xx', 'fnX0sfnX2')), extend=False)
         assert len(r) == 3
-        assert len(list(r.leafs())) == 6
+        assert len(list(r.leaves())) == 6
         assert r.node_child('fnB0sfnA').name(system=SX, direction=FAD_FROM) == 'sfnAXx'
         assert r.node_child('fnB0sfnB').name(system=SX, direction=FAD_FROM) == 'sfnB'
         assert r.node_child('fnX0sfnX2') is None
@@ -1168,7 +1169,7 @@ class TestRecord:
         assert sys_r.val('Cnt') == ''
 
         data_r = Record(fields=dict(Cnt=2, fn0PersForename='John'))
-        sys_r.clear_leafs()
+        sys_r.clear_leaves()
         for k in data_r.leaf_indexes():
             if k[0] in sys_r:
                 sys_r.set_val(data_r.val(*k), *k, root_rec=data_r)
@@ -1208,20 +1209,20 @@ class TestRecord:
         assert csf[0].name() == 'Fld'
         assert csf[0].name(system=SX, direction=FAD_ONTO) == 'Sys_Fld'
 
-    def test_compare_leafs(self):
+    def test_compare_leaves(self):
         r = Record(fields=dict(fnA=33))
-        assert not r.compare_leafs(Record(fields=dict(fnA=33)))
-        assert not r.compare_leafs(Record(fields=dict(fnA=33, fnB=66)), field_names=('fnA',))
-        assert not r.compare_leafs(Record(fields=dict(fnA=33, fnB=66)), exclude_fields=('fnB',))
+        assert not r.compare_leaves(Record(fields=dict(fnA=33)))
+        assert not r.compare_leaves(Record(fields=dict(fnA=33, fnB=66)), field_names=('fnA',))
+        assert not r.compare_leaves(Record(fields=dict(fnA=33, fnB=66)), exclude_fields=('fnB',))
 
         r = Record(fields=dict(fnA=33, fnB=66))
-        assert not r.compare_leafs(Record(fields=dict(fnA=33, fnB=66)))
-        assert not r.compare_leafs(Record(fields=dict(fnA=33, fnB=66)), field_names=('fnA',))
-        assert not r.compare_leafs(Record(fields=dict(fnA=33, fnB=66)), exclude_fields=('fnB',))
+        assert not r.compare_leaves(Record(fields=dict(fnA=33, fnB=66)))
+        assert not r.compare_leaves(Record(fields=dict(fnA=33, fnB=66)), field_names=('fnA',))
+        assert not r.compare_leaves(Record(fields=dict(fnA=33, fnB=66)), exclude_fields=('fnB',))
 
         r = Record(fields=dict(fnA=33))
-        assert len(r.compare_leafs(Record(fields=dict(fnA=99)))) == 1
-        assert len(r.compare_leafs(Record(fields=dict(fnC=99)))) == 2
+        assert len(r.compare_leaves(Record(fields=dict(fnA=99)))) == 1
+        assert len(r.compare_leaves(Record(fields=dict(fnC=99)))) == 2
 
     def test_compare_val(self):
         d = datetime.date.today()
@@ -1292,16 +1293,16 @@ class TestRecord:
         assert r.leaf_names(col_names=('Invalid_fn',)) == ()
         assert r.leaf_names(exclude_fields=('fnA',)) == ()
 
-    def test_merge_leafs(self, rec_2f_2s_complete, rec_2f_2s_incomplete):
+    def test_merge_leaves(self, rec_2f_2s_complete, rec_2f_2s_incomplete):
         r = Record()
         assert len(r) == 0
-        assert len(list(r.leafs())) == 0
-        r.merge_leafs(rec_2f_2s_incomplete)
+        assert len(list(r.leaves())) == 0
+        r.merge_leaves(rec_2f_2s_incomplete)
         assert len(r) == 2
-        assert len(list(r.leafs())) == 3
-        r.merge_leafs(rec_2f_2s_complete)
+        assert len(list(r.leaves())) == 3
+        r.merge_leaves(rec_2f_2s_complete)
         assert len(r) == 2
-        assert len(list(r.leafs())) == 5
+        assert len(list(r.leaves())) == 5
 
     def test_match_key(self, rec_2f_2s_complete):
         r = rec_2f_2s_complete
@@ -1316,11 +1317,11 @@ class TestRecord:
         assert len(r) == 0
         r.merge_values(rec_2f_2s_complete, extend=False)
         assert len(r) == 0
-        assert len(list(r.leafs())) == 0
+        assert len(list(r.leaves())) == 0
 
         r.merge_values(rec_2f_2s_incomplete)
         assert len(r) == 2
-        assert len(list(r.leafs())) == 3
+        assert len(list(r.leaves())) == 3
         assert not r.val('Invalid_fn')
         assert r.val('fnA') == ''
         assert r.val('fnB0sfnA') is None
@@ -1330,7 +1331,7 @@ class TestRecord:
 
         r.merge_values(rec_2f_2s_complete, extend=False)
         assert len(r) == 2
-        assert len(list(r.leafs())) == 5
+        assert len(list(r.leaves())) == 5
         assert not r.val('Invalid_fn')
         assert r.val('fnA') == ''
         assert r.val('fnB0sfnA') == 'sfA1v'
@@ -1340,7 +1341,7 @@ class TestRecord:
 
         r.merge_values(rec_2f_2s_complete)
         assert len(r) == 2
-        assert len(list(r.leafs())) == 5
+        assert len(list(r.leaves())) == 5
         assert not r.val('Invalid_fn')
         assert r.val('fnA') == ''
         assert r.val('fnB0sfnA') == 'sfA1v'
@@ -1545,20 +1546,20 @@ class TestRecords:
         rs.set_value(Value().set_val(99), 3, 'fnA', root_rec=Record(), root_idx=('root_fn',))
         assert rs.value(3, 'fnA').val() == 99
 
-    def test_clear_leafs(self):
+    def test_clear_leaves(self):
         rs = Records()
         assert len(rs) == 0
-        rs.clear_leafs()
+        rs.clear_leaves()
         assert len(rs) == 0
 
         rs.set_node_child(33, 3, 'fnA')
         assert len(rs) == 4
 
-        rs.clear_leafs(reset_lists=False)
+        rs.clear_leaves(reset_lists=False)
         assert rs.value(3, 'fnA').val() == ''
         assert len(rs) == 4
 
-        rs.clear_leafs()
+        rs.clear_leaves()
         assert rs.val(3, 'fnA') is None
         assert len(rs) == 1
 
@@ -1609,7 +1610,7 @@ class TestRecords:
         assert r2.val('fnB', 2, 'sfnA') is None
         assert r2.val('fnB', 2, 'sfnB') is None
 
-        r2.value('fnB').append_record(root_rec=r2, root_idx=('fnB', ), from_rec=r1.value('fnB', 0), clear_leafs=False)
+        r2.value('fnB').append_record(root_rec=r2, root_idx=('fnB', ), from_rec=r1.value('fnB', 0), clear_leaves=False)
         assert r2.val('fnB', 2, 'sfnA') == 2
         assert r2.val('fnB', 2, 'sfnB') == 3
         assert r2['fnB'].root_rec() is r2
@@ -1617,7 +1618,7 @@ class TestRecords:
         assert r2['fnB'].root_idx() == ('fnB', )
         assert r2[('fnB', 2, 'sfnB')].root_idx() == ('fnB', 2, 'sfnB')
 
-        r1.value('fnB').append_record(root_rec=r1, root_idx=('fnB', ), from_rec=r2.value('fnB', 1), clear_leafs=False)
+        r1.value('fnB').append_record(root_rec=r1, root_idx=('fnB', ), from_rec=r2.value('fnB', 1), clear_leaves=False)
         assert r1.val('fnB', 1, 'sfnA') == 8
         assert r1.val('fnB', 1, 'sfnB') == 9
         assert r1['fnB'].root_rec() is r1
@@ -1701,90 +1702,90 @@ class TestStructures:
 
         assert rec_2f_2s_incomplete['fnB1sfnB'].val() == 'sfB2v'
 
-    def test_leafs(self, rec_2f_2s_incomplete, rec_2f_2s_complete):
+    def test_leaves(self, rec_2f_2s_incomplete, rec_2f_2s_complete):
         r = rec_2f_2s_incomplete
-        leafs = list(r.leafs())
-        assert len(leafs) == 3
-        leafs = list(r.leafs(flex_sys_dir=False))
-        assert len(leafs) == 3
-        leafs = list(r.leafs(system='', direction=''))
-        assert len(leafs) == 3
-        leafs = list(r.leafs(system='', direction='', flex_sys_dir=False))
-        assert len(leafs) == 3
-        leafs = list(r.leafs(system=SX, direction=FAD_ONTO))
-        assert len(leafs) == 3
-        leafs = list(r.leafs(system=SX, direction=FAD_ONTO, flex_sys_dir=False))
-        assert len(leafs) == 0
+        leaves = list(r.leaves())
+        assert len(leaves) == 3
+        leaves = list(r.leaves(flex_sys_dir=False))
+        assert len(leaves) == 3
+        leaves = list(r.leaves(system='', direction=''))
+        assert len(leaves) == 3
+        leaves = list(r.leaves(system='', direction='', flex_sys_dir=False))
+        assert len(leaves) == 3
+        leaves = list(r.leaves(system=SX, direction=FAD_ONTO))
+        assert len(leaves) == 3
+        leaves = list(r.leaves(system=SX, direction=FAD_ONTO, flex_sys_dir=False))
+        assert len(leaves) == 0
 
         r.set_env(system=SX, direction=FAD_ONTO)
-        leafs = list(r.leafs())
-        assert len(leafs) == 3
-        leafs = list(r.leafs(flex_sys_dir=False))
-        assert len(leafs) == 0
-        leafs = list(r.leafs(system='', direction=''))
-        assert len(leafs) == 3
-        leafs = list(r.leafs(system='', direction='', flex_sys_dir=False))
-        assert len(leafs) == 3
-        leafs = list(r.leafs(system=SX, direction=FAD_ONTO))
-        assert len(leafs) == 3
-        leafs = list(r.leafs(system=SX, direction=FAD_ONTO, flex_sys_dir=False))
-        assert len(leafs) == 0
+        leaves = list(r.leaves())
+        assert len(leaves) == 3
+        leaves = list(r.leaves(flex_sys_dir=False))
+        assert len(leaves) == 0
+        leaves = list(r.leaves(system='', direction=''))
+        assert len(leaves) == 3
+        leaves = list(r.leaves(system='', direction='', flex_sys_dir=False))
+        assert len(leaves) == 3
+        leaves = list(r.leaves(system=SX, direction=FAD_ONTO))
+        assert len(leaves) == 3
+        leaves = list(r.leaves(system=SX, direction=FAD_ONTO, flex_sys_dir=False))
+        assert len(leaves) == 0
 
         r.add_system_fields((('fnAXx', 'fnA'), ('sfnAXx', 'fnB0sfnA'), ('sfnBXx', 'fnB0sfnB')))
-        leafs = list(r.leafs())
-        assert len(leafs) == 5
-        leafs = list(r.leafs(flex_sys_dir=False))
-        assert len(leafs) == 5
-        leafs = list(r.leafs(system='', direction=''))
-        assert len(leafs) == 5
-        leafs = list(r.leafs(system='', direction='', flex_sys_dir=False))
-        assert len(leafs) == 5
-        leafs = list(r.leafs(system=SX, direction=FAD_ONTO))
-        assert len(leafs) == 5
-        leafs = list(r.leafs(system=SX, direction=FAD_ONTO, flex_sys_dir=False))
-        assert len(leafs) == 5
+        leaves = list(r.leaves())
+        assert len(leaves) == 5
+        leaves = list(r.leaves(flex_sys_dir=False))
+        assert len(leaves) == 5
+        leaves = list(r.leaves(system='', direction=''))
+        assert len(leaves) == 5
+        leaves = list(r.leaves(system='', direction='', flex_sys_dir=False))
+        assert len(leaves) == 5
+        leaves = list(r.leaves(system=SX, direction=FAD_ONTO))
+        assert len(leaves) == 5
+        leaves = list(r.leaves(system=SX, direction=FAD_ONTO, flex_sys_dir=False))
+        assert len(leaves) == 5
 
         r = rec_2f_2s_complete
-        leafs = list(r.leafs())
-        assert len(leafs) == 5
-        leafs = list(r.leafs(flex_sys_dir=False))
-        assert len(leafs) == 5
-        leafs = list(r.leafs(system='', direction=''))
-        assert len(leafs) == 5
-        leafs = list(r.leafs(system='', direction='', flex_sys_dir=False))
-        assert len(leafs) == 5
-        leafs = list(r.leafs(system=SX, direction=FAD_ONTO))
-        assert len(leafs) == 5
-        leafs = list(r.leafs(system=SX, direction=FAD_ONTO, flex_sys_dir=False))
-        assert len(leafs) == 0
+        leaves = list(r.leaves())
+        assert len(leaves) == 5
+        leaves = list(r.leaves(flex_sys_dir=False))
+        assert len(leaves) == 5
+        leaves = list(r.leaves(system='', direction=''))
+        assert len(leaves) == 5
+        leaves = list(r.leaves(system='', direction='', flex_sys_dir=False))
+        assert len(leaves) == 5
+        leaves = list(r.leaves(system=SX, direction=FAD_ONTO))
+        assert len(leaves) == 5
+        leaves = list(r.leaves(system=SX, direction=FAD_ONTO, flex_sys_dir=False))
+        assert len(leaves) == 0
 
         r.set_env(system=SX, direction=FAD_ONTO)
-        leafs = list(r.leafs())
-        assert len(leafs) == 5
-        leafs = list(r.leafs(flex_sys_dir=False))
-        assert len(leafs) == 0
-        leafs = list(r.leafs(system='', direction=''))
-        assert len(leafs) == 5
-        leafs = list(r.leafs(system='', direction='', flex_sys_dir=False))
-        assert len(leafs) == 5
-        leafs = list(r.leafs(system=SX, direction=FAD_ONTO))
-        assert len(leafs) == 5
-        leafs = list(r.leafs(system=SX, direction=FAD_ONTO, flex_sys_dir=False))
-        assert len(leafs) == 0
+        leaves = list(r.leaves())
+        assert len(leaves) == 5
+        leaves = list(r.leaves(flex_sys_dir=False))
+        assert len(leaves) == 0
+        leaves = list(r.leaves(system='', direction=''))
+        assert len(leaves) == 5
+        leaves = list(r.leaves(system='', direction='', flex_sys_dir=False))
+        assert len(leaves) == 5
+        leaves = list(r.leaves(system=SX, direction=FAD_ONTO))
+        assert len(leaves) == 5
+        leaves = list(r.leaves(system=SX, direction=FAD_ONTO, flex_sys_dir=False))
+        assert len(leaves) == 0
 
         r.add_system_fields((('fnAXx', 'fnA'), ('sfnAXx', 'fnB0sfnA'), ('sfnBXx', 'fnB0sfnB')))
-        leafs = list(r.leafs())
-        assert len(leafs) == 5
-        leafs = list(r.leafs(flex_sys_dir=False))
-        assert len(leafs) == 5
-        leafs = list(r.leafs(system='', direction=''))
-        assert len(leafs) == 5
-        leafs = list(r.leafs(system='', direction='', flex_sys_dir=False))
-        assert len(leafs) == 5
-        leafs = list(r.leafs(system=SX, direction=FAD_ONTO))
-        assert len(leafs) == 5
-        leafs = list(r.leafs(system=SX, direction=FAD_ONTO, flex_sys_dir=False))
-        assert len(leafs) == 5
+        leaves = list(r.leaves())
+        assert len(leaves) == 5
+        leaves = list(r.leaves(flex_sys_dir=False))
+        assert len(leaves) == 5
+        leaves = list(r.leaves(system='', direction=''))
+        assert len(leaves) == 5
+        leaves = list(r.leaves(system='', direction='', flex_sys_dir=False))
+        assert len(leaves) == 5
+        leaves = list(r.leaves(system=SX, direction=FAD_ONTO))
+        assert len(leaves) == 5
+        leaves = list(r.leaves(system=SX, direction=FAD_ONTO, flex_sys_dir=False))
+        assert len(leaves) == 5
 
     def test_leaf_indexes(self, rec_2f_2s_incomplete, rec_2f_2s_complete):
         leaf_indexes = list(rec_2f_2s_incomplete.leaf_indexes())
