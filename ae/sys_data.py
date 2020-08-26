@@ -102,7 +102,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tupl
 from ae.valid import correct_email, correct_phone       # type: ignore  # mypy --namespace-packages does not work
 
 
-__version__ = '0.0.8'
+__version__ = '0.0.9'
 
 
 ACTION_INSERT = 'INSERT'        #: insert action
