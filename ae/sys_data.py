@@ -97,7 +97,8 @@ and convert system-specific data from/onto a system.
 import datetime
 import keyword
 from collections import OrderedDict
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union, Generator, Type, cast
+from typing import (
+    Any, Callable, Dict, Iterable, List, MutableSequence, Optional, Sequence, Tuple, Union, Generator, Type, cast)
 
 from ae.valid import correct_email, correct_phone       # type: ignore  # mypy --namespace-packages does not work
 
@@ -523,7 +524,15 @@ class Value(list):
     This class inherits directly from the Python list class. Each instance can hold either a (single/atomic) value
     (which can be anything: numeric, char/string or any object) or a list of these single/atomic values.
     """
-    def __getitem__(self, key: Union[slice, int]) -> Any:
+    ''' silly so silly mypy - since V 0.901 is moaning __getitem__ and __setitem__ overloads, but even using the
+    recommendations from https://mypy.readthedocs.io/en/stable/more_types.html of this mypy release it is throwing errs:
+    @overload
+    def __getitem__(self, key: int) -> Any: ...
+    @overload
+    def __getitem__(self, key: slice) -> MutableSequence[Any]: ...
+    '''
+
+    def __getitem__(self, key: Union[slice, int]) -> Union[Any, MutableSequence[Any]]:          # type: ignore
         """ determine atomic value.
 
         :param key:     list index if value is a list.
@@ -536,7 +545,7 @@ class Value(list):
                 return None
             return ''
 
-    def __setitem__(self, key: Union[slice, int], value: Any) -> None:
+    def __setitem__(self, key: Union[slice, int], value: Any) -> None:              # type: ignore
         """ set/initialize list item identified by `key` to the value passed in `value`.
 
         :param key:     list index if value is a list.
@@ -1878,7 +1887,7 @@ class Records(Values):
         assert child is not None   # mypy: actually not needed because node_child(..moan=True) will raise AssertionError
         return child
 
-    def __setitem__(self, key: Union[IdxTypes, slice], value: Any):
+    def __setitem__(self, key: Union[IdxTypes, slice], value: Any):         # type: ignore
         if isinstance(key, slice):
             super().__setitem__(key, value)
         else:
