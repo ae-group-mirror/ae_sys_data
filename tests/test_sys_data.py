@@ -1455,7 +1455,7 @@ class TestRecords:
         assert isinstance(Records(), list)
 
     def test_repr_eval(self):
-        _ = Values      # added for to remove Pycharm warning
+        _ = Values      # added to remove Pycharm warning
         rep = repr(Records())
         assert eval(rep) == Records()
 

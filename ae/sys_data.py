@@ -2,37 +2,35 @@
 external system data structures
 ===============================
 
-This module allows your application to easily manage data structures for to interface data flows
-from and onto other/external systems.
+this module allows your application to easily manage data structures to interface data flows from and onto external
+systems.
 
-A external system can be nearly anything: like e.g.: a database or web server or
-an application or software suite with an interface for data exchanges; even data files
-can be used as an external system.
+a external system can be nearly anything: like e.g.: a database or web server or an application or software suite with
+an interface for data exchanges; even data files can be used as an external system.
 
-The same data can be represented differently on different systems. This module allows you
-to specify individual data structures for each system and provides hooks for to easily integrate
-system-specific data conversion functions.
+the same data can be represented differently on different systems. this module allows you to specify individual data
+structures for each system and provides hooks to easily integrate system-specific data conversion functions.
 
 
 data structures
 ---------------
 
-Use the classes of this module for to define any kind of simple data structures - like lists, mappings and trees:
+use the classes of this module to define any kind of simple data structures - like lists, mappings and trees:
 
-* A list can get represented by a instance of one of the classes :class:`Records` or :class:`Values`. Each
-  :class:`Records` instance is a sequence of 0..n :class:`Record` instances. A :class:`Values` instance
+* a list can get represented by a instance of one of the classes :class:`Records` or :class:`Values`. each
+  :class:`Records` instance is a sequence of 0..n :class:`Record` instances. a :class:`Values` instance
   is a sequence of 1..n :class:`Value` instances.
-* A mapping get represented by an instance of the class :class:`Record`, whereas each mapping item gets
+* a mapping get represented by an instance of the class :class:`Record`, whereas each mapping item gets
   represented by an instance of the private class :class:`_Field`.
-* A node of a tree structure can be represented by an instance of the classes :class:`Values`, :class:`Records` or
+* a node of a tree structure can be represented by an instance of the classes :class:`Values`, :class:`Records` or
   :class:`Record`.
 
-By combining these simple data structures you can build any complex data structures.
-The root of such a complex data structure can be defined by an instance of either :class:`Records` or :class:`Record`.
+by combining these simple data structures you can build any complex data structures.
+the root of such a complex data structure can be defined by an instance of either :class:`Records` or :class:`Record`.
 
-The leaves of any simple or complex data structure are represented by instances of the :class:`Value` class.
+the leaves of any simple or complex data structure are represented by instances of the :class:`Value` class.
 
-The following diagram is showing a complex data structure with all the possible combinations (of a single system):
+the following diagram is showing a complex data structure with all the possible combinations (of a single system):
 
 .. graphviz::
 
@@ -56,27 +54,27 @@ The following diagram is showing a complex data structure with all the possible 
 data reference index paths
 ..........................
 
-A `index path` is is a tuple of indexes/keys that is referencing one part or a value of a data structure.
+a `index path` is is a tuple of indexes/keys that is referencing one part or a value of a data structure.
 
-The items of an index path are either of type int (specifying a list index in a :class:`Values` or
+the items of an index path are either of type int (specifying a list index in a :class:`Values` or
 :class:`Records` instance) or of type str (specifying a field name of a :class:`Record` instance).
 
-E.g. the index path for to reference in the above graph example the field **DA** from the record **Record (root)**
-would be ``('D', 0, 'DA')``. The first item is referencing the field **D** in the root record. The second item **0** is
+e.g. the index path to reference in the above graph example the field **DA** from the record **Record (root)**
+would be ``('D', 0, 'DA')``. the first item is referencing the field **D** in the root record. the second item **0** is
 referencing the first item of the :class:`Records` instance/value of field **D**, which is a :class:`Record`
-instance. And finally the last item **DA** specifies the field name in this :class:`Record` instance.
+instance. and finally the last item **DA** specifies the field name in this :class:`Record` instance.
 
-The hierarchically highest placed :class:`Record` instance in a data structure is called the `root record`,
+the hierarchically highest placed :class:`Record` instance in a data structure is called the `root record`,
 and the :class:`Value` instances at the lowest level in a data structure are the leaves of a
 data structure.
 
-Each :class:`_Field` is providing apart from its field value also a reference to its root record
-as well as a `root index`. The root index is an index path for to reference the :class:`_Field`
+each :class:`_Field` is providing apart from its field value also a reference to its root record
+as well as a `root index`. the root index is an index path to reference the :class:`_Field`
 instance from the root record.
 
-If the format/representation of the data value or of any references differs at one of the used systems
+if the format/representation of the data value or of any references differs at one of the used systems
 then a :class:`_Field` instance allows you to store a separate system-specific value.
-For to access a system-specific value or reference in your data structure
+to access a system-specific value or reference in your data structure
 you have to specify additionally to the index path also a `system identifier`
 and optionally a `direction identifier`.
 
@@ -84,14 +82,15 @@ and optionally a `direction identifier`.
 system and direction identifiers
 --------------------------------
 
-A `system id` is an user-defined string that is uniquely identifying a system and should consist of at least
+a `system id` is an user-defined string that is uniquely identifying a system and should consist of at least
 two characters (see :data:`_ASP_SYS_MIN_LEN`).
 
-A `direction id` is specifying the data flow direction. The two pre-defined direction ids are
-:data:`FAD_FROM` for pulling data from a system or
-:data:`FAD_ONTO` for pushing data onto a system.
+a `direction id` is specifying the data flow direction. the two pre-defined direction ids are:
 
-The methods :meth:`~Record.pull` and :meth:`~Record.push` of the :class:`Record` class are used to pull/push
+* :data:`FAD_FROM` for pulling data from a system or
+* :data:`FAD_ONTO` for pushing data onto a system.
+
+the methods :meth:`~Record.pull` and :meth:`~Record.push` of the :class:`Record` class are used to pull/push
 and convert system-specific data from/onto a system.
 """
 import datetime
@@ -103,7 +102,7 @@ from typing import (
 from ae.valid import correct_email, correct_phone       # type: ignore  # mypy --namespace-packages does not work
 
 
-__version__ = '0.2.9'
+__version__ = '0.2.10'
 
 
 ACTION_INSERT = 'INSERT'        #: insert action
@@ -127,7 +126,7 @@ FAT_CAL = 'clc'                 #: calculator callable
 FAT_CHK = 'chk'                 #: validator callable
 FAT_CNV = 'cnv'                 #: system value converter callable
 FAT_FLT = 'flt'                 #: field filter callable
-FAT_SQE = 'sqc'                 #: SQL expression for to fetch field value from db
+FAT_SQE = 'sqc'                 #: SQL expression to fetch field value from db
 
 ALL_FATS = (FAT_IDX, FAT_VAL, FAT_CLEAR_VAL, FAT_REC, FAT_RCX, FAT_CAL, FAT_CHK, FAT_CNV, FAT_FLT, FAT_SQE)
 """ tuple of all pre-defined field aspect types/prefixes """
@@ -138,11 +137,11 @@ FAD_ONTO = 'Onto'               #: ONTO field aspect direction
 IDX_PATH_SEP = '/'
 """ separator character used for idx_path values (especially if field has a Record value).
 
-don't use dot char because this is used e.g. for to separate system field names in xml element name paths.
+don't use dot char because this is used e.g. to separate system field names in xml element name paths.
 """
 
 ALL_FIELDS = '**'
-""" special key of fields_patches argument of Record.copy() for to allow aspect value patching for all fields. """
+""" special key of fields_patches argument of Record.copy() to allow aspect value patching for all fields. """
 
 CALLABLE_SUFFIX = '()'          #: suffix for aspect keys - used by _Field.set_aspects()
 
@@ -301,8 +300,9 @@ def idx_path_field_name(idx_path: IdxPathType, add_sep: bool = False) -> str:
     """ convert index path tuple/list into field name string.
 
     :param idx_path:    index path to convert.
-    :param add_sep:     pass True to always separate index with IDX_PATH_SEP. False/Def will only put a separator char
-                        if field value is a Record (for to separate the root field name from the sub field name).
+    :param add_sep:     pass True to always separate index with IDX_PATH_SEP. the default value False will only put a
+                        separator char if the field value is a Record (to separate the root field name from the sub
+                        field name).
     :return:            field name string.
     """
     assert isinstance(idx_path, (tuple, list)), f"idx_path_field_name() expects idx_path as tuple, got {type(idx_path)}"
@@ -412,7 +412,7 @@ def use_current_index(node: Union[ListType, NodeType], idx_path: IdxPathType, us
     :param idx_path:        index path relative to root node passed in `node` arg.
     :param use_curr_idx:    list of index counters within `idx_path` where the current index has to be used.
     :param check_idx_type:  pass True to additionally check if the index type is correct (def=False).
-    :param delta:           value for to decrease the list index counters within `use_curr_idx` (def=1).
+    :param delta:           value to decrease the list index counters within `use_curr_idx` (def=1).
     :return:                tuple of current indexes.
     """
     msg = "use_current_index() expects "
@@ -446,8 +446,8 @@ def string_to_records(str_val: str, field_names: Sequence, rec_sep: str = ',', f
 
     :param str_val:     formatted string to convert.
     :param field_names: list/tuple of field names of each record
-    :param rec_sep:     character(s) used in `str_val` for to separate the records.
-    :param fld_sep:     character(s) used in `str_val` for to separate the field values of each record.
+    :param rec_sep:     character(s) used in `str_val` to separate the records.
+    :param fld_sep:     character(s) used in `str_val` to separate the field values of each record.
     :param root_rec:    root to which the returned records will be added.
     :param root_idx:    index path from root where the returned records will be added.
     :return:            converted :class:`Records` instance.
@@ -481,7 +481,7 @@ def template_idx_path(idx_path: IdxPathType, is_sub_rec: bool = False) -> bool:
 def use_rec_default_root_rec_idx(rec: 'Record', root_rec: Optional['Record'], idx: Optional[IdxPathType] = (),
                                  root_idx: Optional[IdxPathType] = (), met: str = ""
                                  ) -> Tuple['Record', IdxPathType]:
-    """ helper function for to determine resulting root record and root index.
+    """ helper function to determine resulting root record and root index.
 
     :param rec:         current :class:`Record` instance.
     :param root_rec:    default root record (def=`rec`).
@@ -502,7 +502,7 @@ def use_rec_default_root_rec_idx(rec: 'Record', root_rec: Optional['Record'], id
 
 def use_rec_default_sys_dir(rec: Optional['Record'], system: Optional[AspectKeyType], direction: Optional[AspectKeyType]
                             ) -> Tuple[str, str]:
-    """ helper function for to determine resulting system/direction.
+    """ helper function to determine resulting system/direction.
 
     :param rec:         current :class:`Record` instance.
     :param system:      default system id.
@@ -521,16 +521,15 @@ def use_rec_default_sys_dir(rec: Optional['Record'], system: Optional[AspectKeyT
 class Value(list):
     """ represents a value.
 
-    This class inherits directly from the Python list class. Each instance can hold either a (single/atomic) value
+    this class inherits directly from the Python list class. each instance can hold either a (single/atomic) value
     (which can be anything: numeric, char/string or any object) or a list of these single/atomic values.
     """
-    ''' silly so silly mypy - since V 0.901 is moaning __getitem__ and __setitem__ overloads, but even using the
-    recommendations from https://mypy.readthedocs.io/en/stable/more_types.html of this mypy release it is throwing errs:
-    @overload
-    def __getitem__(self, key: int) -> Any: ...
-    @overload
-    def __getitem__(self, key: slice) -> MutableSequence[Any]: ...
-    '''
+    # silly so silly mypy - since V 0.901 is moaning __getitem__ and __setitem__ overloads, but even using the
+    # recommendations https://mypy.readthedocs.io/en/stable/more_types.html of this mypy release it is throwing errors:
+    # @overload
+    # def __getitem__(self, key: int) -> Any: ...
+    # @overload
+    # def __getitem__(self, key: slice) -> MutableSequence[Any]: ...
 
     def __getitem__(self, key: Union[slice, int]) -> Union[Any, MutableSequence[Any]]:          # type: ignore
         """ determine atomic value.
@@ -584,10 +583,10 @@ class Value(list):
     def node_child(self, idx_path: IdxPathType, moan: bool = False, **__) -> Optional['Value']:
         """ check if `idx_path` is correct (has to be empty) and if yes then return self.
 
-        This method is for to simplify the data structure hierarchy implementation.
+        this method is to simplify the data structure hierarchy implementation.
 
         :param idx_path:    this argument has to be an empty tuple/list.
-        :param moan:        pass True for to raise AssertionError if `idx_path` is not empty.
+        :param moan:        pass True to raise AssertionError if `idx_path` is not empty.
         :return:            self or None (if `idx_path` is not empty and `moan` == False).
         """
         if len(idx_path) > 0:
@@ -598,7 +597,7 @@ class Value(list):
     def value(self, *idx_path: IdxItemType, **__) -> Optional['Value']:
         """ check if `idx_path` is correct (has to be empty) and if yes then return self.
 
-        This method is for to simplify the data structure hierarchy implementation.
+        this method is to simplify the data structure hierarchy implementation.
 
         :param idx_path:    this argument has to be an empty tuple.
         :return:            self or None (if `idx_path` is not empty and `moan` == False).
@@ -610,7 +609,7 @@ class Value(list):
     def val(self, *idx_path, **__):
         """ check if `idx_path` is correct (either empty or contain one int) and if yes then return list item.
 
-        This method is for to simplify the data structure hierarchy implementation.
+        this method is to simplify the data structure hierarchy implementation.
 
         :param idx_path:    this argument is either empty or contains a list index.
         :return:            atomic/single value or list item value or empty string.
@@ -643,7 +642,7 @@ class Value(list):
     def clear_leaves(self, **__):
         """ clear/reset the value of this instance.
 
-        use self[-1] = '' for to clear only the newest/top val.
+        use self[-1] = '' to clear only the newest/top val.
 
         :return:    self.
         """
@@ -676,9 +675,9 @@ class Values(list):
         """ determine and return node instance specified by `idx_path` if exists in this instance or underneath.
 
         :param idx_path:            index path to the node, relative to this instance.
-        :param use_curr_idx:        list of counters for to specify if and which current indexes have to be used.
-        :param moan:                flag for to check data integrity; pass True to raise AssertionError if not.
-        :param selected_sys_dir:    optional dict for to return the currently selected system/direction.
+        :param use_curr_idx:        list of counters to specify if and which current indexes have to be used.
+        :param moan:                flag to check data integrity; pass True to raise AssertionError if not.
+        :param selected_sys_dir:    optional dict to return the currently selected system/direction.
         :return:                    found node instance or None if not found.
         """
         msg = f"node_child() of Values/Records instance {self} expects "
@@ -741,7 +740,7 @@ class Values(list):
         :param protect:         pass True to prevent replacement of already existing `ValueType`.
         :param root_rec:        root record.
         :param root_idx:        root index.
-        :param use_curr_idx:    list of counters for to specify if and which current indexes have to be used.
+        :param use_curr_idx:    list of counters to specify if and which current indexes have to be used.
         :return:                self (this instance of :class:`Values` or :class:`Records`).
         """
         msg = f"{type(self)}.set_value() expects "
@@ -772,7 +771,7 @@ class Values(list):
         :param system:          system id.
         :param direction:       direction id.
         :param flex_sys_dir:    pass False to prevent fallback to system-independent value.
-        :param use_curr_idx:    list of counters for to specify if and which current indexes have to be used.
+        :param use_curr_idx:    list of counters to specify if and which current indexes have to be used.
         :param kwargs:          extra args (will be passed to underlying data structure).
         :return:                found user/system value, or None if not found or empty string if value was not set yet.
         """
@@ -795,7 +794,7 @@ class Values(list):
         :param idx_path:        index path items.
         :param protect:         pass True to prevent replacement of already existing `ValueType`.
         :param extend:          pass True to allow extension of data structure.
-        :param use_curr_idx:    list of counters for to specify if and which current indexes have to be used.
+        :param use_curr_idx:    list of counters to specify if and which current indexes have to be used.
         :return:                self (this instance of :class:`Values`).
         """
         idx, *idx2 = init_current_index(self, idx_path, use_curr_idx)
@@ -803,12 +802,12 @@ class Values(list):
         value = val if isinstance(val, Value) else Value((val, ))
         list_len = len(self)
         if list_len <= idx:
-            assert extend, "extend argument has to be True for to add Value instances to Values"
+            assert extend, "extend argument has to be True to add Value instances to Values"
             for _ in range(idx - list_len):
                 self.append(Value())
             self.append(value)
         else:
-            assert not protect, "protect argument has to be True for to overwrite Value"
+            assert not protect, "protect argument has to be True to overwrite Value"
             self[idx] = value
         return self
 
@@ -856,7 +855,7 @@ class Values(list):
 class Record(OrderedDict):
     """ instances of this mapping class are used to represent record-like data structures.
 
-    isinstance(..., dict) not working if using MutableMapping instead of OrderedDict as super class. And dict
+    isinstance(..., dict) not working if using MutableMapping instead of OrderedDict as super class. and dict
     cannot be used as super class because instance as kwarg will then not work: see the Groxx's answer in stackoverflow
     question at https://stackoverflow.com/questions/3387691/how-to-perfectly-override-a-dict/47361653#47361653.
     """
@@ -864,7 +863,7 @@ class Record(OrderedDict):
                  system: AspectKeyType = '', direction: AspectKeyType = '', action: str = '',
                  root_rec: Optional['Record'] = None, root_idx: Optional[IdxPathType] = (),
                  field_items: bool = False):
-        """ Create new Record instance, which is an ordered collection of _Field items.
+        """ create new Record instance, which is an ordered collection of _Field items.
 
         :param template:    pass Records instance to use first item/[0] as template (after deep copy / values cleared).
         :param fields:      OrderedDict/dict of _Field instances (field order is not preserved when using dict)
@@ -927,10 +926,10 @@ class Record(OrderedDict):
         item = self.node_child(idx_path)
         # on executing self.pop() no __delitem__ will be called instead python OrderedDict first pops the item
         # then is calling this method, although super().__contains__() still returns True but then calls __getitem__()
-        # (again with this instance where the item got already removed from). So next two lines are not helping:
+        # (again with this instance where the item got already removed from). so next two lines are not helping:
         # if not item:
         #    item = super().__contains__(idx_path)
-        # So finally had to over-ride the Record.pop() method.
+        # so finally had to over-ride the Record.pop() method.
         return bool(item)
 
     def __getitem__(self, key: IdxTypes) -> Any:
@@ -951,9 +950,9 @@ class Record(OrderedDict):
         """ get the node child specified by `idx_path` relative to this :class:`Record` instance.
 
         :param idx_path:            index path or field name index string.
-        :param use_curr_idx:        list of counters for to specify if and which current indexes have to be used.
-        :param moan:                flag for to check data integrity; pass True to raise AssertionError if not.
-        :param selected_sys_dir:    optional dict for to return the currently selected system/direction.
+        :param use_curr_idx:        list of counters to specify if and which current indexes have to be used.
+        :param moan:                flag to check data integrity; pass True to raise AssertionError if not.
+        :param selected_sys_dir:    optional dict to return the currently selected system/direction.
         :return:                    found node instance or None if not found.
         """
         msg = "Record.node_child() expects "
@@ -996,14 +995,14 @@ class Record(OrderedDict):
                        use_curr_idx: Optional[list] = None, to_value_type: bool = False) -> 'Record':
         """ set/replace the child of the node specified by `idx_path` with the value of `fld_or_val`.
 
-        :param fld_or_val:      field or value - for to be set.
+        :param fld_or_val:      field or value - to be set.
         :param idx_path:        index path of the node child to set/replace.
         :param system:          system id (pass None to use default system id of this `Record` instance).
         :param direction:       direction id (pass None to use default direction id of this `Record` instance).
         :param protect:         pass True to prevent the replacement of a node child.
         :param root_rec:        root record of this data structure.
         :param root_idx:        root index path of this node.
-        :param use_curr_idx:    list of counters for to specify if and which current indexes have to be used.
+        :param use_curr_idx:    list of counters to specify if and which current indexes have to be used.
         :param to_value_type:   pass True ensure conversion of `fld_or_val` to a Value instance.
         :return:                self (this Record instance).
         """
@@ -1040,7 +1039,7 @@ class Record(OrderedDict):
                 ror = self.value(fld_idx, flex_sys_dir=True)    # if protect==True then should be of Record or Records
                 if not isinstance(ror, NODE_TYPES):
                     assert not protect, msg + f"{NODE_TYPES} type in field value ({ror}[{idx_path}]), got {type(ror)}" \
-                        f"; pass protect argument as False for to convert and overwrite"
+                        "; pass protect argument as False to convert and overwrite"
                     ror = Record() if isinstance(idx2[0], str) else Records()
                     init_current_index(ror, tuple(idx2), use_curr_idx)
                     self.set_value(ror, fld_idx, root_rec=root_rec, root_idx=root_idx[:-1], use_curr_idx=use_curr_idx)
@@ -1102,7 +1101,7 @@ class Record(OrderedDict):
         :param protect:         pass True to protect existing node value from to be changed/replaced.
         :param root_rec:        root Record instance of this data structure.
         :param root_idx:        root index to this node/Record instance.
-        :param use_curr_idx:    list of counters for to specify if and which current indexes have to be used.
+        :param use_curr_idx:    list of counters to specify if and which current indexes have to be used.
         :return:                self (this Record instance).
         """
         system, direction = use_rec_default_sys_dir(self, system, direction)
@@ -1124,7 +1123,7 @@ class Record(OrderedDict):
         :param system:          system id (pass None to use default system id of this `Record` instance).
         :param direction:       direction id (pass None to use default direction id of this `Record` instance).
         :param flex_sys_dir:    pass False to prevent fallback to system-independent value.
-        :param use_curr_idx:    list of counters for to specify if and which current indexes have to be used.
+        :param use_curr_idx:    list of counters to specify if and which current indexes have to be used.
         :param kwargs:          extra args (will be passed to underlying data structure).
         :return:                found user/system value, or None if not found or empty string if value was not set yet.
         """
@@ -1162,10 +1161,10 @@ class Record(OrderedDict):
         :param flex_sys_dir:    pass False to prevent fallback to system-independent value.
         :param protect:         pass True to protect existing node value from to be changed/replaced.
         :param extend:          pass False to prevent extension of data structure.
-        :param converter:       converter callable for to convert user values between systems.
+        :param converter:       converter callable to convert user values between systems.
         :param root_rec:        root Record instance of this data structure.
         :param root_idx:        root index to this node/Record instance.
-        :param use_curr_idx:    list of counters for to specify if and which current indexes have to be used.
+        :param use_curr_idx:    list of counters to specify if and which current indexes have to be used.
         :param to_value_type:   pass True ensure conversion of `val` to a Value instance.
         :return:                self (this Record instance).
         """
@@ -1185,7 +1184,7 @@ class Record(OrderedDict):
             field = cast(_Field, self.node_child(idx, selected_sys_dir=ssd))    # mypy
             sys_s, dir_s = ssd.get('system', sys_s), ssd.get('direction', dir_s)
         else:
-            assert extend, "Record.set_val() expects extend=True for to add new fields"
+            assert extend, "Record.set_val() expects extend=True to add new fields"
             field = _Field(root_rec=root_rec or self, root_idx=root_idx)
             assert isinstance(idx, str), f"Record.set_val() expects str type in first item of {idx_path}"     # mypy
             self._add_field(field, idx)
@@ -1200,7 +1199,7 @@ class Record(OrderedDict):
         """ add _Field instance to this Record instance.
 
         :param field:   _Field instance to add.
-        :param idx:     name/key/idx string for to map and identify this field (mostly identical to field.name()).
+        :param idx:     name/key/idx string to map and identify this field (mostly identical to field.name()).
         :return:        self.
         """
         msg = f"_add_field({field}, {idx}): "
@@ -1221,9 +1220,9 @@ class Record(OrderedDict):
         """ adding fields to this Record instance.
 
         :param fields:      either a dict, a Record or a list with (key/field_name, val/_Field) tuples.
-                            Key strings that are containing digits/numbers are interpreted as name/idx paths (then also
+                            key strings that are containing digits/numbers are interpreted as name/idx paths (then also
                             the specified sub-Records/-Fields will be created).
-                            Values can be either _Field instances or field values.
+                            values can be either _Field instances or field values.
         :param root_rec:    root record of this record (def=self will be a root record).
         :param root_idx:    root index of this record (def=()).
         :return:            self
@@ -1247,15 +1246,15 @@ class Record(OrderedDict):
                           ) -> 'Record':
         """ add/set fields to this :class:`Record` instance from the field definition passed into `system_fields`.
 
-        Make sure before you call this method that this :class:`Record` instance has the system and direction
+        make sure before you call this method that this :class:`Record` instance has the system and direction
         attributes specified/set.
 
         :param system_fields:   tuple/list of tuples/lists with system and main field names and optional field aspects.
-                                The index of the field names and aspects within the inner tuples/lists get specified
+                                the index of the field names and aspects within the inner tuples/lists get specified
                                 by sys_fld_indexes.
-        :param sys_fld_indexes: mapping/map-item-indexes of the inner tuples of system_fields. Keys are field aspect
+        :param sys_fld_indexes: mapping/map-item-indexes of the inner tuples of system_fields. keys are field aspect
                                 types (FAT_* constants), optionally extended with a direction (FAD_* constant) and a
-                                system (SDI_* constant). If the value aspect key (FAT_VAL) contains a callable then
+                                system (SDI_* constant). if the value aspect key (FAT_VAL) contains a callable then
                                 it will be set as the calculator (FAT_CAL) aspect; if contains a field value then also
                                 the clear_val of this field will be set to the specified value.
         :param system:          system of the fields to be added - if not passed self.system will be used.
@@ -1318,7 +1317,7 @@ class Record(OrderedDict):
                     field.set_name(field_name)
                 assert isinstance(field, _Field), msg + f"_Field type in {idx_path} child, got {type(field)}"    # mypy
 
-                # add additional aspects: first always add converter and value (for to create separate system value)
+                # add additional aspects: first always add converter and value (to create separate system value)
                 cnv_func = None
                 cnv_key = FAT_CNV + direction
                 if map_len > sfi.get(cnv_key, map_len):
@@ -1368,9 +1367,9 @@ class Record(OrderedDict):
         deep_sys_fld_name = sys_fld_name_path[-1]
         full_path = path_sep.join(sys_fld_name_path)
         for sys_name, field in self.sys_name_field_map.items():
-            if sys_name == deep_sys_fld_name or sys_name == full_path or full_path.endswith(path_sep + sys_name):
-                if field not in self.collected_system_fields:
-                    self.collected_system_fields.append(field)
+            if (sys_name == deep_sys_fld_name or sys_name == full_path or full_path.endswith(path_sep + sys_name)) \
+                    and field not in self.collected_system_fields:
+                self.collected_system_fields.append(field)
 
         return self.collected_system_fields
 
@@ -1451,13 +1450,13 @@ class Record(OrderedDict):
         :param root_idx:        destination root index (tuple/list with index path items: field names, list indexes).
         :param onto_rec:        destination record; pass None to create new Record instance.
         :param filter_fields:   method called for each copied field (return True to filter/hide/not-include into copy).
-        :param fields_patches:  dict[field_name_or_ALL_FIELDS:dict[aspect_key:val_or_callable]] for to set/overwrite
-                                aspect values in each copied _Field instance). The keys of the outer dict are either
+        :param fields_patches:  dict[field_name_or_ALL_FIELDS:dict[aspect_key:val_or_callable]] to set/overwrite
+                                aspect values in each copied _Field instance). the keys of the outer dict are either
                                 field names or the ALL_FIELDS value; aspect keys ending with the CALLABLE_SUFFIX
                                 have a callable in the dict item that will be called for each field with the field
                                 instance as argument; the return value of the callable will then be used as the (new)
                                 aspect value.
-                                Set the aspect value that stores the field value (aspect key == :data:`FAT_VAL`)
+                                set the aspect value that stores the field value (aspect key == :data:`FAT_VAL`)
                                 by passing a data structure instance (of type :data:`ValueType`).
         :return:                new/extended record instance.
         """
@@ -1554,7 +1553,7 @@ class Record(OrderedDict):
         :param name_type:       type of name to be included/returned - see available name types underneath.
         :return:                tuple of field names/indexes of the included/found leaves.
 
-        Possible values for the `name_type` argument are:
+        possible values for the `name_type` argument are:
 
         * 's': user/system field/column name.
         * 'f': field name.
@@ -1676,7 +1675,7 @@ class Record(OrderedDict):
         :param default: return value if a field with the name specified by idx does not exist in this Record.
         :return:        removed :class:`_Field` instance if found, else None.
 
-        This method got added because the OrderedDict.pop() method does not call __delitem__() (see also __contains__())
+        this method got added because the OrderedDict.pop() method does not call __delitem__() (see also __contains__())
         """
         field = self._fields.get(idx)
         # assert isinstance(field, _Field), f"Record.pop() expects _Field type at {idx}, got {type(field)}"    # mypy
@@ -1816,13 +1815,13 @@ class Record(OrderedDict):
                                 None to include all fields (if put_empty_val == True).
         :param key_type:        type of dict keys: None=field name, tuple=index path tuple, str=index path string (def).
         :param push_onto:       pass False to prevent self.push(system).
-        :param use_system_key:  pass False to put leaf field name/index; def=True for to use system field name/keys,
+        :param use_system_key:  pass False to put leaf field name/index; def=True to use system field name/keys,
                                 specified by the system/direction args.
-        :param put_system_val:  pass False to include/use main field val; def=True for to include system val specified
+        :param put_system_val:  pass False to include/use main field val; def=True to include system val specified
                                 by the system/direction args.
         :param put_empty_val:   pass True to also include fields with an empty value (None/'').
-        :param system:          system id for to determine included leaf and field val (if put_system_val == True).
-        :param direction:       direction id for to determine included leaf and field val (if put_system_val == True).
+        :param system:          system id to determine included leaf and field val (if put_system_val == True).
+        :param direction:       direction id to determine included leaf and field val (if put_system_val == True).
         :return:                dict of filtered leaf user/system values with field names/idx_path-tuples as their key.
         """
         msg = "Record.to_dict() expects "
@@ -1852,22 +1851,22 @@ class Record(OrderedDict):
         return ret
 
     def update(self, mapping=(), **kwargs):
-        """ update this `Record` instance - overwriting/extending OrderedDict/super().update() for to return self.
+        """ update this `Record` instance - overwriting/extending OrderedDict/super().update() to return self.
 
-        :param mapping:     mapping to use for to update this :class:`Record` instance.
+        :param mapping:     mapping to use to update this :class:`Record` instance.
         :param kwargs:      optional keyword arguments.
         :return:            self (this :class:`Record` instance).
         """
         super().update(mapping, **kwargs)
-        return self     # implemented only for to get self as return value
+        return self     # implemented only to get self as return value
 
 
 class Records(Values):
     """ Records class.
 
-    Each instance of this :class:`Records` class is a list of 0..n :class:`Record` instances.
+    each instance of this :class:`Records` class is a list of 0..n :class:`Record` instances.
 
-    The not overwritten methods of the inherited :class:`Values` class are also available - like e.g.
+    the not overwritten methods of the inherited :class:`Values` class are also available - like e.g.
     :meth:`Values.node_child` or :meth:`Values.val`.
     """
     def __init__(self, seq: Iterable = ()):
@@ -1901,14 +1900,14 @@ class Records(Values):
                        use_curr_idx: Optional[list] = None) -> 'Records':
         """ set/replace the child of the node specified by `idx_path` with the value of `rec_or_fld_or_val`.
 
-        :param rec_or_fld_or_val: record, field or value - for to be set.
+        :param rec_or_fld_or_val: record, field or value - to be set.
         :param idx_path:        index path of the node child to set/replace.
         :param system:          system id (pass None to use default system id of this `Records` instance).
         :param direction:       direction id (pass None to use default direction id of this `Records` instance).
         :param protect:         pass True to prevent the replacement of a node child.
         :param root_rec:        root record of this data structure.
         :param root_idx:        root index path of this node.
-        :param use_curr_idx:    list of counters for to specify if and which current indexes have to be used.
+        :param use_curr_idx:    list of counters to specify if and which current indexes have to be used.
         :return:                self (this `Records` instance).
         """
         idx_len = len(idx_path)
@@ -1951,10 +1950,10 @@ class Records(Values):
         :param flex_sys_dir:    pass False to prevent fallback to system-independent value.
         :param protect:         pass True to protect existing node value from to be changed/replaced.
         :param extend:          pass False to prevent extension of data structure.
-        :param converter:       converter callable for to convert user values between systems.
+        :param converter:       converter callable to convert user values between systems.
         :param root_rec:        root Record instance of this data structure.
         :param root_idx:        root index to this node/Records instance.
-        :param use_curr_idx:    list of counters for to specify if and which current indexes have to be used.
+        :param use_curr_idx:    list of counters to specify if and which current indexes have to be used.
         :return:                self (this Records instance).
         """
         if len(idx_path) == 0:
@@ -1970,7 +1969,7 @@ class Records(Values):
         if root_idx:
             root_idx += (idx, )
         if list_len <= idx:
-            assert extend, "extend has to be True for to add Value instances to Values"
+            assert extend, "extend has to be True to add Value instances to Values"
             for _ in range(idx - list_len + 1):
                 self.append(Record(template=self, root_rec=root_rec, root_idx=root_idx))
                 protect = False
@@ -2021,7 +2020,7 @@ class Records(Values):
         """ compare the records of this instance with the ones passed in the `records` argument.
 
         :param records:         other instance of :class:`Records` to be compared against self.
-        :param match_fields:    iterable with field names/index paths for to determine each `Record` id/pkey.
+        :param match_fields:    iterable with field names/index paths to determine each `Record` id/pkey.
         :param field_names:     iterable with field names/index paths that get compared.
         :param exclude_fields:  iterable with field names/index-paths that get excluded from to be compared.
         :param record_comparator: optional callable for additional compare (called for each Record).
@@ -2053,7 +2052,7 @@ class Records(Values):
     def index_match_fields(self, match_fields: Iterable) -> 'Records':
         """ create/initialize match index for this :class:`Records` instance (stored in `match_index` attribute).
 
-        :param match_fields:    iterable with field names/index paths for to determine each `Record` id/pkey.
+        :param match_fields:    iterable with field names/index paths to determine each `Record` id/pkey.
         :return:                self (this :class:`Records` instance).
         """
         for rec in self:
@@ -2129,24 +2128,24 @@ class Records(Values):
 
 
 class _Field:
-    """ Internal/Private class used by :class:`Record` for to create record field instances.
+    """ Internal/Private class used by :class:`Record` to create record field instances.
 
-    An instance of :class:`_Field` is representing one record field. The field properties are internally stored
+    an instance of :class:`_Field` is representing one record field. the field properties are internally stored
     within a private dict (:data:`_Field._aspects`) and are called the 'aspects' of a field.
 
-    Field aspects get used by a field instance e.g. for to:
+    field aspects get used by a field instance e.g. to:
     * store field value(s)
-    * define callable(s) for to convert, filter or validate field values
+    * define callable(s) to convert, filter or validate field values
     * associate the root record and root index
-    * store any other user-defined field properties (like SQL column expressions, comments, ...)
+    * store any other user-defined field properties (like sql column expressions, comments, ...)
 
-    The :data:`FAT_ALL` constant contains all pre-defined aspects (see the other FAT_* constants defined at the
-    top of this module). These values are called 'aspect keys' and are used as dict keys in the private dict.
+    the :data:`FAT_ALL` constant contains all pre-defined aspects (see the other FAT_* constants defined at the
+    top of this module). these values are called 'aspect keys' and are used as dict keys in the private dict.
 
-    Each aspect can additionally have a separate property for each systems/directions - in this case the aspect
-    key gets extended with direction/system ids. The two available direction ids are pre-defined by the constants
-    :data:`FAD_FROM` and :data:`FAD_ONTO`. The system ids are not defined in this module, they have to be defined
-    by the application. Aspect keys can be compiled with the function :func:`aspect_key`.
+    each aspect can additionally have a separate property for each systems/directions - in this case the aspect
+    key gets extended with direction/system ids. the two available direction ids are pre-defined by the constants
+    :data:`FAD_FROM` and :data:`FAD_ONTO`. the system ids are not defined in this module, they have to be defined
+    by the application. aspect keys can be compiled with the function :func:`aspect_key`.
     """
     def __init__(self, root_rec: Optional[Record] = None, root_idx: IdxPathType = (), allow_values: bool = False,
                  **aspects):
@@ -2201,9 +2200,9 @@ class _Field:
         """ get the node child specified by `idx_path` relative to this :class:`_Field` instance.
 
         :param idx_path:            index path or field name index string.
-        :param use_curr_idx:        list of counters for to specify if and which current indexes have to be used.
-        :param moan:                flag for to check data integrity; pass True to raise AssertionError if not.
-        :param selected_sys_dir:    optional dict for to return the currently selected system/direction.
+        :param use_curr_idx:        list of counters to specify if and which current indexes have to be used.
+        :param moan:                flag to check data integrity; pass True to raise AssertionError if not.
+        :param selected_sys_dir:    optional dict to return the currently selected system/direction.
         :return:                    found node instance or None if not found.
         """
         msg = f"node_child() of _Field {self} expects "
@@ -2268,7 +2267,7 @@ class _Field:
         :param protect:         pass True to protect existing node value from to be changed/replaced.
         :param root_rec:        root Record instance of this data structure.
         :param root_idx:        root index to this node/Record instance.
-        :param use_curr_idx:    list of counters for to specify if and which current indexes have to be used.
+        :param use_curr_idx:    list of counters to specify if and which current indexes have to be used.
         :return:                self (this _Field instance).
         """
         msg = f"_Field.set_value({value}, {idx_path}, {system}, {direction}, {protect}): "
@@ -2309,7 +2308,7 @@ class _Field:
         :param system:          system id ('' stands for the main/system-independent value).
         :param direction:       direction id ('' stands for the main/system-independent value).
         :param flex_sys_dir:    pass False to prevent fallback to system-independent value.
-        :param use_curr_idx:    list of counters for to specify if and which current indexes have to be used.
+        :param use_curr_idx:    list of counters to specify if and which current indexes have to be used.
         :param kwargs:          extra args (will be passed to underlying data structure).
         :return:                found user/system value, or None if not found or empty string if value was not set yet.
         """
@@ -2334,10 +2333,10 @@ class _Field:
         :param flex_sys_dir:    pass False to prevent fallback to system-independent value.
         :param protect:         pass True to protect existing node value from to be changed/replaced.
         :param extend:          pass False to prevent extension of data structure.
-        :param converter:       converter callable for to convert user values between systems.
+        :param converter:       converter callable to convert user values between systems.
         :param root_rec:        root Record instance of this data structure.
         :param root_idx:        root index to this node/Record instance.
-        :param use_curr_idx:    list of counters for to specify if and which current indexes have to be used.
+        :param use_curr_idx:    list of counters to specify if and which current indexes have to be used.
         :param to_value_type:   pass True ensure conversion of `val` to a Value instance.
         :return:                self (this _Field instance).
         """
@@ -2393,7 +2392,7 @@ class _Field:
         :return:                the main or user/system value of this leaf/field or None if deeper value
                                 exists and `flex_sys_dir` is False.
 
-        Used also for to check if a deeper located sys field exists in the current data structure.
+        used also to check if a deeper located sys field exists in the current data structure.
         """
         value = self.value(system=system, direction=direction, flex_sys_dir=True)
         if not flex_sys_dir and not isinstance(value, NODE_TYPES) \
@@ -2443,7 +2442,7 @@ class _Field:
         :return:                the full aspect key of the first found aspect that is matching the
                                 passed aspect type and optionally also the passed system and direction ids.
 
-        The search will done in the following order:
+        the search will done in the following order:
         * all passed aspect types including the passed system/direction ids.
         * all passed aspect types including the passed system and both directions (if direction id get not passed).
         * all passed aspect types including the passed system and without direction id.
@@ -2660,7 +2659,7 @@ class _Field:
         """ check if this field has a name identical to the one passed in `name`.
 
         :param name:                name to search for.
-        :param selected_sys_dir:    pass dict for to get back the system and direction ids of the found name.
+        :param selected_sys_dir:    pass dict to get back the system and direction ids of the found name.
         :return:                    full aspect key of the found name (including system/direction) or None if not found.
         """
         for asp_key, asp_val in self._aspects.items():
@@ -2734,7 +2733,7 @@ class _Field:
 
         :param system:          system id (def='' stands for the main/system-independent value).
         :param direction:       direction id (def='' stands for the main/system-independent value).
-        :return:                callable used for to calculate the value of this field or None if not set/exists/found.
+        :return:                callable used to calculate the value of this field or None if not set/exists/found.
         """
         return self.aspect_value(FAT_CAL, system=system, direction=direction)
 
@@ -2742,7 +2741,7 @@ class _Field:
                        protect: bool = False) -> '_Field':
         """ set/change the field value calculator of this field, system and direction.
 
-        :param calculator:      new callable used for to calculate the value of this field.
+        :param calculator:      new callable used to calculate the value of this field.
         :param system:          system id (def='' stands for the main/system-independent value).
         :param direction:       direction id (def='' stands for the main/system-independent value).
         :param protect:         pass True to prevent overwrite of already set/existing calculator callable.
@@ -2789,9 +2788,9 @@ class _Field:
 
         :param system:          system id (def='' stands for the main/system-independent value).
         :param direction:       direction id (def='' stands for the main/system-independent value).
-        :return:                callable used for to convert the field value between systems or None if not set.
+        :return:                callable used to convert the field value between systems or None if not set.
 
-        Separate system-specific representations of the field value can be (automatically) converted
+        separate system-specific representations of the field value can be (automatically) converted
         by specifying a converter callable aspect.
         """
         assert system != '', "_Field converter can only be retrieved for a given/non-empty system"
@@ -2802,7 +2801,7 @@ class _Field:
                       root_rec: Record = None, root_idx: IdxPathType = ()) -> '_Field':
         """ set/change the field value converter of this field, system and direction.
 
-        :param converter:       new callable used for to convert the value of this field between systems.
+        :param converter:       new callable used to convert the value of this field between systems.
         :param system:          system id (def='' stands for the main/system-independent value).
         :param direction:       direction id (def='' stands for the main/system-independent value).
         :param protect:         pass False to allow overwrite of already set converter callable.
@@ -2833,7 +2832,7 @@ class _Field:
 
         :param system:          system id (def='' stands for the main/system-independent value).
         :param direction:       direction id (def='' stands for the main/system-independent value).
-        :return:                callable used for to filter this field/parent-record or None if not set.
+        :return:                callable used to filter this field/parent-record or None if not set.
         """
         return self.aspect_value(FAT_FLT, system=system, direction=direction)
 
@@ -2842,7 +2841,7 @@ class _Field:
                      ) -> '_Field':
         """ set/change the filterer callable of this field, system and direction.
 
-        :param filterer:        new callable used for to filter this field or the parent record.
+        :param filterer:        new callable used to filter this field or the parent record.
         :param system:          system id (def='' stands for the main/system-independent value).
         :param direction:       direction id (def='' stands for the main/system-independent value).
         :param protect:         pass True to prevent overwrite of already set/existing filter callable.
@@ -2864,7 +2863,7 @@ class _Field:
                            ) -> '_Field':
         """ set/change sql column expression of this field, system and direction.
 
-        :param sql_expression:  new sql column expression used for to fetch associated db column of this field.
+        :param sql_expression:  new sql column expression used to fetch associated db column of this field.
         :param system:          system id (def='' stands for the main/system-independent value).
         :param direction:       direction id (def='' stands for the main/system-independent value).
         :param protect:         pass True to prevent overwrite of already set/existing filter callable.
@@ -2886,7 +2885,7 @@ class _Field:
                       root_rec: Record = None, root_idx: IdxPathType = ()) -> '_Field':
         """ set/change the field value validator of this field, system and direction.
 
-        :param validator:       new callable used for to validate the value of this field, systems and direction.
+        :param validator:       new callable used to validate the value of this field, systems and direction.
         :param system:          system id (def='' stands for the main/system-independent value).
         :param direction:       direction id (def='' stands for the main/system-independent value).
         :param protect:         pass False to allow overwrite of already set converter callable.
@@ -2936,7 +2935,7 @@ class _Field:
                      reset_lists: bool = True) -> '_Field':
         """ clear/reset field values and if reset_lists == True also Records/Values lists to one item.
 
-        :param system:          system of the field value to clear, pass None for to clear all field values.
+        :param system:          system of the field value to clear, pass None to clear all field values.
         :param direction:       direction of the field value to clear.
         :param flex_sys_dir:    if True then also clear field value if system is given and field has no system value.
         :param reset_lists:     if True/def then also clear Records/lists to one item.
@@ -2998,7 +2997,7 @@ class _Field:
 
         :param system:          system id (def='' stands for the main/system-independent value).
         :param direction:       direction id (def='' stands for the main/system-independent value).
-        :param value_types:     pass tuple of :data:`ValueType` for to restrict search to one of the passed types.
+        :param value_types:     pass tuple of :data:`ValueType` to restrict search to one of the passed types.
         :return:                found parent instance or None if not set or if type is not of passed `value_types`.
         """
         root_rec = self.root_rec(system=system, direction=direction)
@@ -3058,8 +3057,8 @@ class _Field:
 
         :param str_val:         formatted string to convert.
         :param field_names:     list/tuple of field names of each record
-        :param rec_sep:         character(s) used in `str_val` for to separate the records.
-        :param fld_sep:         character(s) used in `str_val` for to separate the field values of each record.
+        :param rec_sep:         character(s) used in `str_val` to separate the records.
+        :param fld_sep:         character(s) used in `str_val` to separate the field values of each record.
         :param system:          system id (def='' stands for the main/system-independent value).
         :param direction:       direction id (def='' stands for the main/system-independent value).
         :return:                converted :class:`Records` instance.
@@ -3079,7 +3078,7 @@ class _Field:
         :param direction:       direction id (def='' stands for the main/system-independent value).
         :return:                the field value if found else None.
 
-        This method has an alias named :meth:`.rfv`.
+        this method has an alias named :meth:`.rfv`.
         """
         root_rec = self.root_rec(system=system, direction=direction)
         assert root_rec and idx_path, f"rfv() expects non-empty root_rec {root_rec} and idx_path {idx_path}"
@@ -3095,10 +3094,10 @@ class _Field:
         :param idx_path:        index path of the field.
         :param system:          system id (def='' stands for the main/system-independent value).
         :param direction:       direction id (def='' stands for the main/system-independent value).
-        :param use_curr_idx:    list of counters for to specify if and which current indexes have to be used.
+        :param use_curr_idx:    list of counters to specify if and which current indexes have to be used.
         :return:                the currently selected field value if found else None.
 
-        This method has an alias named :meth:`.srv`.
+        this method has an alias named :meth:`.srv`.
         """
         root_rec: Optional[Record] = self.root_rec(system=system, direction=direction)
         assert root_rec, f"srv() expects existing root_rec for system {system} and direction {direction}"
@@ -3119,7 +3118,7 @@ class _Field:
         :param direction:       direction id (def='' stands for the main/system-independent value).
         :return:                True if the data structure has set one of the passed `actions` else False.
 
-        This method has an alias named :meth:`.ina`.
+        this method has an alias named :meth:`.ina`.
         """
         root_rec = self.root_rec(system=system, direction=direction)
         is_in = root_rec is not None and root_rec.action in actions
@@ -3134,7 +3133,7 @@ class _Field:
         :param direction:       direction id (def='' stands for the main/system-independent value).
         :return:                full index path or None if no current index exists above this field.
 
-        This method has an alias named :meth:`.crx`.
+        this method has an alias named :meth:`.crx`.
         """
         item = self.parent(system=system, direction=direction, value_types=(Records, ))
         if item:
