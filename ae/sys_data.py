@@ -5,7 +5,7 @@ external system data structures
 this module allows your application to easily manage data structures to interface data flows from and onto external
 systems.
 
-a external system can be nearly anything: like e.g.: a database or web server or an application or software suite with
+an external system can be nearly anything: like e.g.: a database or web server or an application or software suite with
 an interface for data exchanges; even data files can be used as an external system.
 
 the same data can be represented differently on different systems. this module allows you to specify individual data
@@ -17,7 +17,7 @@ data structures
 
 use the classes of this module to define any kind of simple data structures - like lists, mappings and trees:
 
-* a list can get represented by a instance of one of the classes :class:`Records` or :class:`Values`. each
+* a list can get represented by an instance of one of the classes :class:`Records` or :class:`Values`. each
   :class:`Records` instance is a sequence of 0..n :class:`Record` instances. a :class:`Values` instance
   is a sequence of 1..n :class:`Value` instances.
 * a mapping get represented by an instance of the class :class:`Record`, whereas each mapping item gets
@@ -54,7 +54,7 @@ the following diagram is showing a complex data structure with all the possible 
 data reference index paths
 ..........................
 
-a `index path` is is a tuple of indexes/keys that is referencing one part or a value of a data structure.
+an `index path` is a tuple of indexes/keys that is referencing one part or a value of a data structure.
 
 the items of an index path are either of type int (specifying a list index in a :class:`Values` or
 :class:`Records` instance) or of type str (specifying a field name of a :class:`Record` instance).
@@ -82,7 +82,7 @@ and optionally a `direction identifier`.
 system and direction identifiers
 --------------------------------
 
-a `system id` is an user-defined string that is uniquely identifying a system and should consist of at least
+a `system id` is a user-defined string that is uniquely identifying a system and should consist of at least
 two characters (see :data:`_ASP_SYS_MIN_LEN`).
 
 a `direction id` is specifying the data flow direction. the two pre-defined direction ids are:
@@ -102,7 +102,7 @@ from typing import (
 from ae.valid import correct_email, correct_phone       # type: ignore  # mypy --namespace-packages does not work
 
 
-__version__ = '0.2.10'
+__version__ = '0.3.10'
 
 
 ACTION_INSERT = 'INSERT'        #: insert action
@@ -154,7 +154,7 @@ IDX_TYPES: Tuple[Type, ...] = (int, str)            #: tuple of classes/types us
 # PATH_TYPES = IDX_TYPES + (tuple, )
 PATH_TYPES = (int, str, tuple)                      #: path items, plus field name path, plus index path
 
-AspectKeyType = str                                             #: type of a _Field aspect key
+AspectKeyType = str                                             #: type of _Field aspect key
 IdxItemType = Union[int, str]                                   #: types of idx_path items
 IdxPathType = Tuple[IdxItemType, ...]                           #: idx_path type
 IdxTypes = Union[IdxItemType, IdxPathType]                      #: types of either idx_path or idx_path items
@@ -221,7 +221,7 @@ def aspect_key_direction(key: str) -> str:
 def deeper(deepness: int, instance: Any) -> int:
     """ check and calculate resulting/remaining deepness for Record/_Field/Records.copy() when going one level deeper.
 
-    :param deepness:    <0 will be returned unchanged until last level is reached (-1==full deep copy, -2==deep copy
+    :param deepness:    <0 will be returned unchanged until last level is reached: -1==full deep copy, -2==deep copy
                         until deepest Value, -3==deep copy until deepest _Field.
     :param instance:    instance to be processed/copied (if this method is returning != 0/zero).
     :return:            if deepness == 0 then return 0, if deepness < 0 then return 0 if the deepest level is reached,
@@ -252,7 +252,7 @@ def field_name_idx_path(field_name: Union[int, str, IdxPathType], return_root_fi
         # mypy - false positive using () instead of tuple()
         return tuple(field_name) if return_root_fields or len(field_name) > 1 else tuple()  # mypy-"-
 
-    idx_path: List[Union[int, str]] = list()
+    idx_path: List[Union[int, str]] = []
     nam_i = num_i = None
     last_i = len(field_name) - 2    # prevent splitting of 1- or 2-digit-indexed sys names, like e.g. NAME-1 or CD_ADD11
     for ch_i, ch_v in enumerate(field_name):
@@ -301,8 +301,8 @@ def idx_path_field_name(idx_path: IdxPathType, add_sep: bool = False) -> str:
 
     :param idx_path:    index path to convert.
     :param add_sep:     pass True to always separate index with IDX_PATH_SEP. the default value False will only put a
-                        separator char if the field value is a Record (to separate the root field name from the sub
-                        field name).
+                        separator char if the field value is a Record (to separate the root field name from the subfield
+                        name).
     :return:            field name string.
     """
     assert isinstance(idx_path, (tuple, list)), f"idx_path_field_name() expects idx_path as tuple, got {type(idx_path)}"
@@ -356,7 +356,7 @@ def get_current_index(node: Union[ListType, NodeType]) -> Optional[IdxItemType]:
 
 def init_current_index(node: Union[ListType, NodeType], idx_path: IdxPathType, use_curr_idx: Optional[List]
                        ) -> IdxPathType:
-    """ determine current index of `node` and if not set the initialize to the first index path item.
+    """ determine current index of `node` and if not set then initialize to the first index path item.
 
     :param node:            root node/list (Record or Records/Values instance) to process.
     :param idx_path:        index path relative to root node passed in `node` arg.
@@ -378,7 +378,7 @@ def set_current_index(node: Union[ListType, NodeType], idx: Optional[IdxItemType
 
     :param node:            root node/list (Record or Records/Values instance) to process.
     :param idx:             index value to set (str for field name; int for list index); if given `add` will be ignored.
-    :param add:             value to add to list index; will be ignored if `idx` arg get passed.
+    :param add:             value to add to list index; will be ignored if the :paramref:`.idx` argument is specified.
     :return:                the finally set/new index value.
     """
     msg = "set_current_index() expects "
@@ -455,7 +455,7 @@ def string_to_records(str_val: str, field_names: Sequence, rec_sep: str = ',', f
     recs = Records()
     if str_val:
         for rec_idx, rec_str in enumerate(str_val.split(rec_sep)):
-            fields = dict()
+            fields = {}
             for fld_idx, fld_val in enumerate(rec_str.split(fld_sep)):
                 fields[field_names[fld_idx]] = fld_val
             recs.append(Record(fields=fields, root_rec=root_rec, root_idx=root_idx + (rec_idx,)))
@@ -816,10 +816,10 @@ class Values(list):
         """ copy the values/records of this :class:`Values`/:class:`Records` instance.
 
         :param deepness:        deep copy levels: <0==see deeper(), 0==only copy current instance, >0==deep copy
-                                to deepness value - _Field occupies two deepness: 1st=_Field, 2nd=Value).
+                                to deepness value - _Field occupies two deepness: 1st=_Field, 2nd=Value.
         :param root_rec:        destination root record.
         :param root_idx:        destination index path (tuple of field names and/or list/Records indexes).
-        :param kwargs:          additional arguments (will be passed on - most of them used by Record.copy).
+        :param kwargs:          additional arguments (will be passed on - most of them used by Record.copy()).
         :return:                new instance of self (which is an instance of :class:`Values` or :class:`Records`).
         """
         ret = type(self)()      # create new instance of this list/class (Values or Records)
@@ -902,8 +902,8 @@ class Record(OrderedDict):
         if fields:
             self.add_fields(fields, root_rec=root_rec, root_idx=root_idx)
 
-        self.sys_name_field_map: Dict[str, _Field] = dict()  # map system field name as key to _Field instance(as value)
-        self.collected_system_fields: List[_Field] = list()   # system fields found by collect_system_fields()
+        self.sys_name_field_map: Dict[str, _Field] = {}     # map system field name as key to _Field instance(as value)
+        self.collected_system_fields: List[_Field] = []     # system fields found by collect_system_fields()
 
     def __repr__(self) -> str:
         ret = "Record("
@@ -933,7 +933,7 @@ class Record(OrderedDict):
         return bool(item)
 
     def __getitem__(self, key: IdxTypes) -> Any:
-        ssd: Dict[str, str] = dict()
+        ssd: Dict[str, str] = {}
         child = self.node_child(key, moan=True, selected_sys_dir=ssd)
         # should actually not happen because with moan=True node_child() will raise AssertionError
         # if child is None:
@@ -1057,7 +1057,7 @@ class Record(OrderedDict):
             *rec_path, deep_fld_name = idx_path
             rec = self.node_child(tuple(rec_path), use_curr_idx=use_curr_idx)
             if not rec:     # if no deeper Record instance exists, then create new Record via empty dict and set_val()
-                self.set_val(dict(), *rec_path, protect=protect, root_rec=root_rec, root_idx=root_idx[:-1],
+                self.set_val({}, *rec_path, protect=protect, root_rec=root_rec, root_idx=root_idx[:-1],
                              use_curr_idx=use_curr_idx, to_value_type=to_value_type)
                 rec = self.node_child(tuple(rec_path), use_curr_idx=use_curr_idx)
             use_current_index(self, idx_path, use_curr_idx, delta=len(rec_path))
@@ -1139,7 +1139,7 @@ class Record(OrderedDict):
             idx, *idx2 = use_current_index(self, idx_path, use_curr_idx)
             if idx in self._fields:     # don't use _fields.keys() to also detect system field names
                 # field = self._fields[idx]  ->  field = self._fields.get(idx)   # get() doesn't find sys fld names  ->
-                ssd: Dict[str, str] = dict()
+                ssd: Dict[str, str] = {}
                 field = self.node_child(idx, selected_sys_dir=ssd)
                 val = field.val(*idx2, system=ssd.get('system', system), direction=ssd.get('direction', direction),
                                 flex_sys_dir=flex_sys_dir, use_curr_idx=use_curr_idx, **kwargs)
@@ -1180,7 +1180,7 @@ class Record(OrderedDict):
         root_idx += (idx, )
         field: _Field
         if idx in self._fields:
-            ssd: Dict[str, str] = dict()
+            ssd: Dict[str, str] = {}
             field = cast(_Field, self.node_child(idx, selected_sys_dir=ssd))    # mypy
             sys_s, dir_s = ssd.get('system', sys_s), ssd.get('direction', dir_s)
         else:
@@ -1220,7 +1220,7 @@ class Record(OrderedDict):
         """ adding fields to this Record instance.
 
         :param fields:      either a dict, a Record or a list with (key/field_name, val/_Field) tuples.
-                            key strings that are containing digits/numbers are interpreted as name/idx paths (then also
+                            key strings containing digits/numbers are interpreted as name/idx paths (then also
                             the specified sub-Records/-Fields will be created).
                             values can be either _Field instances or field values.
         :param root_rec:    root record of this record (def=self will be a root record).
@@ -1257,7 +1257,7 @@ class Record(OrderedDict):
                                 system (SDI_* constant). if the value aspect key (FAT_VAL) contains a callable then
                                 it will be set as the calculator (FAT_CAL) aspect; if contains a field value then also
                                 the clear_val of this field will be set to the specified value.
-        :param system:          system of the fields to be added - if not passed self.system will be used.
+        :param system:          system of the fields to be added - if not specified :attr:`~Record.system` will be used.
         :param direction:       direction (FAD constants) of the fields to be added - if not passed used self.direction.
         :param extend:          True=add not existing fields, False=apply new system aspects only on existing fields.
         :return:                self
@@ -1362,7 +1362,7 @@ class Record(OrderedDict):
         :param path_sep:            system field name/key separator character(s).
         :return:                    list of :class:'_Field` instances which are having system field name/keys set.
         """
-        self.collected_system_fields = list()
+        self.collected_system_fields = []
 
         deep_sys_fld_name = sys_fld_name_path[-1]
         full_path = path_sep.join(sys_fld_name_path)
@@ -1386,8 +1386,8 @@ class Record(OrderedDict):
         def _excluded():
             return (field_names and idx_path[0] not in field_names and idx_path[-1] not in field_names) \
                                 or (idx_path[0] in exclude_fields or idx_path[-1] in exclude_fields)
-        dif = list()
-        found_idx = list()
+        dif = []
+        found_idx = []
         for idx_path in self.leaf_indexes(system='', direction=''):
             if _excluded():
                 continue
@@ -1445,13 +1445,13 @@ class Record(OrderedDict):
         """ copy the fields of this record.
 
         :param deepness:        deep copy level: <0==see deeper(), 0==only copy this record instance, >0==deep copy
-                                to deepness value - _Field occupies two deepness: 1st=_Field, 2nd=Value).
+                                to deepness value - _Field occupies two deepness: 1st=_Field, 2nd=Value.
         :param root_rec:        destination root record - using onto_rec/new record if not specified.
         :param root_idx:        destination root index (tuple/list with index path items: field names, list indexes).
         :param onto_rec:        destination record; pass None to create new Record instance.
         :param filter_fields:   method called for each copied field (return True to filter/hide/not-include into copy).
         :param fields_patches:  dict[field_name_or_ALL_FIELDS:dict[aspect_key:val_or_callable]] to set/overwrite
-                                aspect values in each copied _Field instance). the keys of the outer dict are either
+                                aspect values in each copied _Field instance. the keys of the outer dict are either
                                 field names or the ALL_FIELDS value; aspect keys ending with the CALLABLE_SUFFIX
                                 have a callable in the dict item that will be called for each field with the field
                                 instance as argument; the return value of the callable will then be used as the (new)
@@ -1565,7 +1565,7 @@ class Record(OrderedDict):
             * user/system name if `system` is not empty/None.
             * field name.
         """
-        names = list()
+        names = []
         ret_name: IdxTypes
         for field in self.leaves(system=system, direction=direction, flex_sys_dir=False):
             idx_path = field.root_idx(system=system, direction=direction)
@@ -1657,7 +1657,7 @@ class Record(OrderedDict):
         :param required_fields:     list/tuple/iterable of field names or index paths of required fields.
         :return:                    list of index paths for the ones that are missing or having an empty/None value.
         """
-        missing = list()
+        missing = []
         for alt in required_fields:
             if not isinstance(alt, tuple):
                 alt = (alt, )
@@ -1778,7 +1778,7 @@ class Record(OrderedDict):
         :param col_names:   optionally restrict to select columns to names given in this list.
         :return:            list of sql column names.
         """
-        column_names = list()
+        column_names = []
         for field in self._fields.values():
             if len(field.root_idx(system=from_system, direction=FAD_FROM)) == 1:
                 name = field.aspect_value(FAT_IDX, system=from_system, direction=FAD_FROM)
@@ -1793,7 +1793,7 @@ class Record(OrderedDict):
         :param col_names:   optionally restrict to select columns to names given in this list.
         :return:            list of sql column names/expressions.
         """
-        column_expressions = list()
+        column_expressions = []
         for field in self._fields.values():
             if len(field.root_idx(system=from_system, direction=FAD_FROM)) == 1:
                 name = field.aspect_value(FAT_IDX, system=from_system, direction=FAD_FROM)
@@ -1831,17 +1831,17 @@ class Record(OrderedDict):
         if push_onto and system:
             self.push(system)
 
-        ret: Dict[IdxTypes, Any] = dict()
+        ret: Dict[IdxTypes, Any] = {}
         for idx_path in self.leaf_indexes(system=system, direction=direction):
             field = self.node_child(idx_path)
             assert isinstance(field, _Field), msg + f"_Field type at {idx_path}, got {type(field)}"  # mypy
             key: IdxTypes = field.name(system=system, direction=direction, flex_sys_dir=False)
             if key and (not filter_fields or not filter_fields(field)):
-                key_path = tuple(idx_path[:-1] + (key,)) if system and use_system_key else idx_path
+                key_path = tuple(idx_path[:-1] + (key, )) if system and use_system_key else idx_path
                 if key_type == tuple:
-                    key = key_path
+                    key = cast(IdxPathType, key_path)
                 elif key_type == str:
-                    key = idx_path_field_name(key_path)
+                    key = idx_path_field_name(cast(IdxPathType, key_path))
                 if put_system_val:
                     val = self.val(*idx_path, system=system, direction=direction)
                 else:
@@ -1875,7 +1875,7 @@ class Records(Values):
         :param seq:     Iterable used to initialize the new instance (pass list, tuple or other iterable).
         """
         super().__init__(seq)
-        self.match_index: Dict[Tuple, List[Record]] = dict()
+        self.match_index: Dict[Tuple, List[Record]] = {}
 
     def __getitem__(self, key: Union[slice, IdxTypes]) -> Union[ValueType, List[ValueType]]:    # type: ignore
         if isinstance(key, slice):
@@ -2027,9 +2027,9 @@ class Records(Values):
         :return:                list of differences.
         """
         records.index_match_fields(match_fields)
-        processed_match_keys = list()
+        processed_match_keys = []
 
-        dif: List[str] = list()
+        dif: List[str] = []
         for idx, rec in enumerate(self):
             match_key = rec.match_key(match_fields)
             if match_key in records.match_index:
@@ -2093,7 +2093,7 @@ class Records(Values):
         """ merge the records passed in `records` into this :class:`Records` instance.
 
         :param records:         records to be merged in.
-        :param match_fields:    match fields used to identify already existing records (merge values in this cases).
+        :param match_fields:    match fields used to identify already existing records (merge values in these cases).
         :return:                self.
         """
         if len(self) == 0 or not match_fields:
@@ -2142,14 +2142,14 @@ class _Field:
     the :data:`FAT_ALL` constant contains all pre-defined aspects (see the other FAT_* constants defined at the
     top of this module). these values are called 'aspect keys' and are used as dict keys in the private dict.
 
-    each aspect can additionally have a separate property for each systems/directions - in this case the aspect
+    each aspect can additionally have a separate property for each system/direction - in this case the aspect
     key gets extended with direction/system ids. the two available direction ids are pre-defined by the constants
     :data:`FAD_FROM` and :data:`FAD_ONTO`. the system ids are not defined in this module, they have to be defined
     by the application. aspect keys can be compiled with the function :func:`aspect_key`.
     """
     def __init__(self, root_rec: Optional[Record] = None, root_idx: IdxPathType = (), allow_values: bool = False,
                  **aspects):
-        self._aspects: Dict[str, Any] = dict()
+        self._aspects: Dict[str, Any] = {}
         self.add_aspects(allow_values=allow_values, **aspects)
         if root_rec is not None:
             self.set_root_rec(root_rec)
@@ -2169,7 +2169,7 @@ class _Field:
     def __repr__(self):
         names = self.name()
         values = repr(self.val())
-        sys_dir_names = list()
+        sys_dir_names = []
         for idx_key, name in self._aspects.items():
             if idx_key.startswith(FAT_IDX) and len(idx_key) > _ASP_TYPE_LEN:
                 sys_dir_names.append((idx_key, name))
@@ -2417,7 +2417,7 @@ class _Field:
 
     def leaf_indexes(self, *idx_path: IdxItemType, system: AspectKeyType = '', direction: AspectKeyType = '',
                      flex_sys_dir: bool = True) -> Generator[IdxPathType, None, None]:
-        """ generate leaf-/_Field-index paths for all sub-fields underneath (if exist) or this :class:`_Field` instance.
+        """ generate leaf-/_Field-index paths for all subfields underneath (if exist) or this :class:`_Field` instance.
 
         :param idx_path:        index path to this `_Field` instance.
         :param system:          system id ('' stands for the main/system-independent value).
@@ -2442,13 +2442,13 @@ class _Field:
         :return:                the full aspect key of the first found aspect that is matching the
                                 passed aspect type and optionally also the passed system and direction ids.
 
-        the search will done in the following order:
+        the search will be done in the following order:
         * all passed aspect types including the passed system/direction ids.
         * all passed aspect types including the passed system and both directions (if direction id get not passed).
         * all passed aspect types including the passed system and without direction id.
         * all passed aspect types without system and direction ids.
         """
-        keys = list()
+        keys = []
         if direction and system:
             for aspect_type in aspect_types:
                 keys.append(aspect_key(aspect_type, system=system, direction=direction))
@@ -2804,7 +2804,7 @@ class _Field:
         :param converter:       new callable used to convert the value of this field between systems.
         :param system:          system id (def='' stands for the main/system-independent value).
         :param direction:       direction id (def='' stands for the main/system-independent value).
-        :param protect:         pass False to allow overwrite of already set converter callable.
+        :param protect:         pass False to allow the overwriting of an already set converter callable.
         :param root_rec:        root Record instance of this field, system and direction.
         :param root_idx:        root index to this node/:class:`_Field` instance.
         :return:                self (this :class:`_Field` instance).
@@ -2888,7 +2888,7 @@ class _Field:
         :param validator:       new callable used to validate the value of this field, systems and direction.
         :param system:          system id (def='' stands for the main/system-independent value).
         :param direction:       direction id (def='' stands for the main/system-independent value).
-        :param protect:         pass False to allow overwrite of already set converter callable.
+        :param protect:         pass False to allow the overwriting of an already set converter callable.
         :param root_rec:        root Record instance of this field, system and direction.
         :param root_idx:        root index to this node/:class:`_Field` instance.
         :return:                self (this :class:`_Field` instance).
@@ -2948,7 +2948,7 @@ class _Field:
                 self.set_val(clr_val, system=_sys, direction=_dir, flex_sys_dir=False)
                 init_sys_dir.append((_sys, _dir))
 
-        init_sys_dir: List[Tuple[str, str]] = list()
+        init_sys_dir: List[Tuple[str, str]] = []
         if system is None and direction is None:
             for asp_key, asp_val in self._aspects.items():
                 if asp_key.startswith(FAT_VAL):
@@ -2958,7 +2958,7 @@ class _Field:
             if asp_val is not None:
                 _clr_val(system, direction, flex_sys_dir)
 
-        # finally set clear val for field value if field has no explicit value for the system of the clear val
+        # set clear val for field value if field has no explicit value for the system of the clear val
         for asp_key, asp_val in self._aspects.items():
             if asp_key.startswith(FAT_CLEAR_VAL):
                 system = aspect_key_system(asp_key)
@@ -2972,15 +2972,15 @@ class _Field:
         """ copy the aspects (names, indexes, values, ...) of this field.
 
         :param deepness:        deep copy level: <0==see deeper(), 0==only copy current instance, >0==deep copy
-                                to deepness value - _Field occupies two deepness: 1st=_Field, 2nd=Value).
+                                to deepness value - _Field occupies two deepness: 1st=_Field, 2nd=Value.
         :param root_rec:        destination root record.
         :param root_idx:        destination index path (tuple of field names and/or list/Records/Values indexes).
-        :param kwargs:          additional arguments (will be passed on - most of them used by Record.copy).
+        :param kwargs:          additional arguments (will be passed on - most of them used by :meth:`Record.copy`).
         :return:                new/copied :class:`_Field` instance.
         """
         aspects = self._aspects
         if deepness:
-            copied = dict()
+            copied = {}
             for asp_key, asp_val in aspects.items():
                 if asp_key.startswith(FAT_VAL) and deeper(deepness, asp_val):
                     # FAT_VAL.asp_val is field value of VALUE_TYPES (Value, Records, ...)
