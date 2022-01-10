@@ -1361,14 +1361,14 @@ class TestRecord:
 
     def test_sql_columns(self, rec_2f_2s_complete):
         r = Record()
-        assert r.sql_columns(SS) == list()
+        assert r.sql_columns(SS) == []
 
         r = rec_2f_2s_complete
-        assert r.sql_columns(SS) == list()
+        assert r.sql_columns(SS) == []
 
         r = rec_2f_2s_complete.copy()
         r.set_env(system=SS, direction=FAD_ONTO).add_system_fields((('DbCol1', 'fnA'), ('DbCol2', 'fnX')))
-        assert r.sql_columns(SS) == list()
+        assert r.sql_columns(SS) == []
 
         r = rec_2f_2s_complete.copy()
         r.set_env(system=SS, direction=FAD_FROM).add_system_fields((('DbCol1', 'fnA'), ('DbCol2', 'fnX')))
@@ -1380,14 +1380,14 @@ class TestRecord:
 
     def test_sql_select(self, rec_2f_2s_complete):
         r = Record()
-        assert r.sql_select(SS) == list()
+        assert r.sql_select(SS) == []
 
         r = rec_2f_2s_complete
-        assert r.sql_select(SS) == list()
+        assert r.sql_select(SS) == []
 
         r = rec_2f_2s_complete.copy()
         r.set_env(system=SS, direction=FAD_ONTO).add_system_fields((('DbCol1', 'fnA'), ('DbCol2', 'fnX')))
-        assert r.sql_select(SS) == list()
+        assert r.sql_select(SS) == []
 
         r = rec_2f_2s_complete.copy()
         r.set_env(system=SS, direction=FAD_FROM).add_system_fields((('DbCol1', 'fnA'), ('DbCol2', 'fnX')))
@@ -1409,7 +1409,7 @@ class TestRecord:
 
     def test_to_dict(self, rec_2f_2s_complete):
         r = Record()
-        assert r.to_dict() == dict()
+        assert r.to_dict() == {}
 
         r = rec_2f_2s_complete.copy()
         assert r.to_dict() == dict(fnB0sfnA='sfA1v', fnB0sfnB='sfB1v', fnB1sfnA='sfA2v', fnB1sfnB='sfB2v')
@@ -1505,7 +1505,7 @@ class TestRecords:
 
     def test_val_get(self):
         rs = Records()
-        assert rs.val() == list()
+        assert rs.val() == []
         assert rs.val(0) is None
         assert rs.val('test') is None
         assert rs.val(12, 'sub_field') is None
@@ -1637,7 +1637,7 @@ class TestRecords:
         rs2.set_val('ChangedVal', 0, 'sfnA')
         assert len(rs1.compare_records(rs2, ('sfnA', 'sfnB'))) == 2
 
-        assert len(rs1.compare_records(rs2, ('sfnA', 'sfnB'), record_comparator=lambda r1, r2: list())) == 3
+        assert len(rs1.compare_records(rs2, ('sfnA', 'sfnB'), record_comparator=lambda r1, r2: [])) == 3
 
         assert len(rs1.compare_records(rs2, ('sfnA', 'sfnB'), record_comparator=lambda r1, r2: ['AAA'])) == 9
 
