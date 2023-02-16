@@ -102,7 +102,7 @@ from typing import (
 from ae.valid import correct_email, correct_phone       # type: ignore  # mypy --namespace-packages does not work
 
 
-__version__ = '0.3.10'
+__version__ = '0.3.11'
 
 
 ACTION_INSERT = 'INSERT'        #: insert action
@@ -441,7 +441,7 @@ def use_current_index(node: Union[ListType, NodeType], idx_path: IdxPathType, us
 
 
 def string_to_records(str_val: str, field_names: Sequence, rec_sep: str = ',', fld_sep: str = '=',
-                      root_rec: 'Record' = None, root_idx: IdxPathType = ()) -> 'Records':
+                      root_rec: Optional['Record'] = None, root_idx: IdxPathType = ()) -> 'Records':
     """ convert formatted string into a :class:`Records` instance containing several :class:`Record` instances.
 
     :param str_val:     formatted string to convert.
@@ -729,7 +729,7 @@ class Values(list):
     def set_value(self, value: ValueType, *idx_path: IdxItemType,
                   system: AspectKeyType = '', direction: AspectKeyType = '',
                   protect: bool = False, root_rec: Optional['Record'] = None, root_idx: IdxPathType = (),
-                  use_curr_idx: list = None
+                  use_curr_idx: Optional[list] = None
                   ) -> Union['Values', 'Records']:
         """ set the ValueType instance referenced by `idx_path` of this :class:`Values`/:class:`Records` instance.
 
@@ -764,7 +764,7 @@ class Values(list):
 
     def val(self, *idx_path: IdxItemType,
             system: AspectKeyType = '', direction: AspectKeyType = '', flex_sys_dir: bool = True,
-            use_curr_idx: list = None, **kwargs) -> Any:
+            use_curr_idx: Optional[list] = None, **kwargs) -> Any:
         """ determine the user/system value referenced by `idx_path` of this :class:`Values`/:class:`Records` instance.
 
         :param idx_path:        index path items.
@@ -787,7 +787,7 @@ class Values(list):
         return val
 
     def set_val(self, val: Any, *idx_path: IdxItemType, protect: bool = False, extend: bool = True,
-                use_curr_idx: list = None) -> 'Values':
+                use_curr_idx: Optional[list] = None) -> 'Values':
         """ set the user/system value referenced by `idx_path` of this :class:`Values` instance.
 
         :param val:             user/system value to set/change.
@@ -990,7 +990,7 @@ class Record(OrderedDict):
         return field
 
     def set_node_child(self, fld_or_val: Any, *idx_path: IdxItemType,
-                       system: AspectKeyType = None, direction: AspectKeyType = None,
+                       system: Optional[AspectKeyType] = None, direction: Optional[AspectKeyType] = None,
                        protect: bool = False, root_rec: Optional['Record'] = None, root_idx: Optional[IdxPathType] = (),
                        use_curr_idx: Optional[list] = None, to_value_type: bool = False) -> 'Record':
         """ set/replace the child of the node specified by `idx_path` with the value of `fld_or_val`.
@@ -1067,7 +1067,8 @@ class Record(OrderedDict):
 
         return self
 
-    def value(self, *idx_path: IdxItemType, system: AspectKeyType = None, direction: AspectKeyType = None, **kwargs
+    def value(self, *idx_path: IdxItemType,
+              system: Optional[AspectKeyType] = None, direction: Optional[AspectKeyType] = None, **kwargs
               ) -> Optional[ValueType]:
         """ search the Value specified by `idx_path` and return it if found.
 
@@ -1089,7 +1090,7 @@ class Record(OrderedDict):
         return None
 
     def set_value(self, value: ValueType, *idx_path: IdxItemType,
-                  system: AspectKeyType = None, direction: AspectKeyType = None,
+                  system: Optional[AspectKeyType] = None, direction: Optional[AspectKeyType] = None,
                   protect: bool = False, root_rec: Optional['Record'] = None, root_idx: IdxPathType = (),
                   use_curr_idx: Optional[list] = None) -> 'Record':
         """ set/replace the Value instance of the node specified by `idx_path`.
@@ -1115,8 +1116,8 @@ class Record(OrderedDict):
         return self
 
     def val(self, *idx_path: IdxItemType,
-            system: AspectKeyType = None, direction: AspectKeyType = None, flex_sys_dir: bool = True,
-            use_curr_idx: Optional[list] = None, **kwargs) -> Any:
+            system: Optional[AspectKeyType] = None, direction: Optional[AspectKeyType] = None,
+            flex_sys_dir: bool = True, use_curr_idx: Optional[list] = None, **kwargs) -> Any:
         """ determine the user/system value referenced by `idx_path` of this :class:`Record` instance.
 
         :param idx_path:        index path items.
@@ -1216,7 +1217,7 @@ class Record(OrderedDict):
         super().__setitem__(idx, field)     # self._fields[idx] = field
         return self
 
-    def add_fields(self, fields: Iterable, root_rec: 'Record' = None, root_idx: IdxPathType = ()) -> 'Record':
+    def add_fields(self, fields: Iterable, root_rec: Optional['Record'] = None, root_idx: IdxPathType = ()) -> 'Record':
         """ adding fields to this Record instance.
 
         :param fields:      either a dict, a Record or a list with (key/field_name, val/_Field) tuples.
@@ -1241,9 +1242,9 @@ class Record(OrderedDict):
             self.set_node_child(fld_or_val, *idx_path, protect=True, root_rec=root_rec, root_idx=root_idx)
         return self
 
-    def add_system_fields(self, system_fields: Iterable[Iterable[Any]], sys_fld_indexes: Dict = None,
-                          system: AspectKeyType = None, direction: AspectKeyType = None, extend: bool = True
-                          ) -> 'Record':
+    def add_system_fields(self, system_fields: Iterable[Iterable[Any]], sys_fld_indexes: Optional[Dict] = None,
+                          system: Optional[AspectKeyType] = None, direction: Optional[AspectKeyType] = None,
+                          extend: bool = True) -> 'Record':
         """ add/set fields to this :class:`Record` instance from the field definition passed into `system_fields`.
 
         make sure before you call this method that this :class:`Record` instance has the system and direction
@@ -1512,8 +1513,8 @@ class Record(OrderedDict):
             field.clear_leaves(system=system, direction=direction, flex_sys_dir=flex_sys_dir, reset_lists=reset_lists)
         return self
 
-    def leaves(self, system: AspectKeyType = None, direction: AspectKeyType = None, flex_sys_dir: bool = True
-               ) -> Generator['_Field', None, None]:
+    def leaves(self, system: Optional[AspectKeyType] = None, direction: Optional[AspectKeyType] = None,
+               flex_sys_dir: bool = True) -> Generator['_Field', None, None]:
         """ generate leaves/_Field-instances of this :class:`Record` instance.
 
         :param system:          system id (pass None to use default system id of this `Record` instance).
@@ -1525,8 +1526,9 @@ class Record(OrderedDict):
         for field in self._fields.values():
             yield from field.leaves(system=system, direction=direction, flex_sys_dir=flex_sys_dir)
 
-    def leaf_indexes(self, *idx_path: IdxItemType, system: AspectKeyType = None, direction: AspectKeyType = None,
-                     flex_sys_dir: bool = True) -> Generator[IdxPathType, None, None]:
+    def leaf_indexes(self, *idx_path: IdxItemType, system: Optional[AspectKeyType] = None,
+                     direction: Optional[AspectKeyType] = None, flex_sys_dir: bool = True
+                     ) -> Generator[IdxPathType, None, None]:
         """ generate leaf-/_Field-index paths for all fields of this :class:`Record` instance.
 
         :param idx_path:        index path to be added as base index path (index path to this `Record` instance).
@@ -1742,8 +1744,9 @@ class Record(OrderedDict):
                         return self
         return None
 
-    def set_env(self, system: AspectKeyType = None, direction: AspectKeyType = None, action: str = None,
-                root_rec: Optional['Record'] = None, root_idx: Optional[IdxPathType] = ()) -> 'Record':
+    def set_env(self, system: Optional[AspectKeyType] = None, direction: Optional[AspectKeyType] = None,
+                action: Optional[str] = None, root_rec: Optional['Record'] = None, root_idx: Optional[IdxPathType] = ()
+                ) -> 'Record':
         """ set the environment (system/direction/action) of this :class:`Record` instance.
 
         :param system:          system id (pass None to leave unchanged).
@@ -1808,7 +1811,8 @@ class Record(OrderedDict):
                 key_type: Union[Type[str], Type[tuple], None] = str,
                 push_onto: bool = True,
                 use_system_key: bool = True, put_system_val: bool = True, put_empty_val: bool = False,
-                system: AspectKeyType = None, direction: AspectKeyType = None) -> Dict[IdxTypes, Any]:
+                system: Optional[AspectKeyType] = None, direction: Optional[AspectKeyType] = None
+                ) -> Dict[IdxTypes, Any]:
         """ copy Record leaf values into a dict.
 
         :param filter_fields:   callable returning True for each field that need to be excluded in returned dict, pass
@@ -2256,7 +2260,7 @@ class _Field:
 
     def set_value(self, value: ValueType, *idx_path: IdxItemType,
                   system: AspectKeyType = '', direction: AspectKeyType = '',
-                  protect: bool = False, root_rec: 'Record' = None, root_idx: IdxPathType = (),
+                  protect: bool = False, root_rec: Optional['Record'] = None, root_idx: IdxPathType = (),
                   use_curr_idx: Optional[list] = None) -> '_Field':
         """ set/replace the Value instance of the node specified by `idx_path`.
 
@@ -2772,7 +2776,7 @@ class _Field:
         return self.set_aspect(clr_val, FAT_CLEAR_VAL, system=system, direction=direction)
 
     def _ensure_system_value(self, system: AspectKeyType, direction: AspectKeyType = '',
-                             root_rec: Record = None, root_idx: IdxPathType = ()):
+                             root_rec: Optional[Record] = None, root_idx: IdxPathType = ()):
         """ check if a field value for the specified `system`/`direction` exists and if not then create it.
 
         :param system:          system id (def='' stands for the main/system-independent value).
@@ -2798,7 +2802,7 @@ class _Field:
 
     def set_converter(self, converter: FieldValCallable,
                       system: AspectKeyType, direction: AspectKeyType = '', protect: bool = True,
-                      root_rec: Record = None, root_idx: IdxPathType = ()) -> '_Field':
+                      root_rec: Optional[Record] = None, root_idx: IdxPathType = ()) -> '_Field':
         """ set/change the field value converter of this field, system and direction.
 
         :param converter:       new callable used to convert the value of this field between systems.
@@ -2882,7 +2886,7 @@ class _Field:
 
     def set_validator(self, validator: FieldValCallable,
                       system: AspectKeyType = '', direction: AspectKeyType = '', protect: bool = False,
-                      root_rec: Record = None, root_idx: IdxPathType = ()) -> '_Field':
+                      root_rec: Optional[Record] = None, root_idx: IdxPathType = ()) -> '_Field':
         """ set/change the field value validator of this field, system and direction.
 
         :param validator:       new callable used to validate the value of this field, systems and direction.
@@ -2909,7 +2913,7 @@ class _Field:
         return not callable(validator) or validator(self, val)
 
     def append_record(self, system: AspectKeyType = '', direction: AspectKeyType = '', flex_sys_dir: bool = True,
-                      root_rec: Record = None, root_idx: IdxPathType = ()) -> Record:
+                      root_rec: Optional[Record] = None, root_idx: IdxPathType = ()) -> Record:
         """ append new record to the :class:`Records` value of this field/system/direction.
 
         :param system:          system id of the field value to extend.
@@ -2968,7 +2972,7 @@ class _Field:
 
         return self
 
-    def copy(self, deepness=0, root_rec: Record = None, root_idx: IdxPathType = (), **kwargs) -> '_Field':
+    def copy(self, deepness=0, root_rec: Optional[Record] = None, root_idx: IdxPathType = (), **kwargs) -> '_Field':
         """ copy the aspects (names, indexes, values, ...) of this field.
 
         :param deepness:        deep copy level: <0==see deeper(), 0==only copy current instance, >0==deep copy

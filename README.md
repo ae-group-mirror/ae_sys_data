@@ -1,12 +1,12 @@
-<!-- THIS FILE IS EXCLUSIVELY MAINTAINED by the project ae V0.2.85 -->
-<!-- THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev_tpl_namespace_root V0.3.6 -->
-# sys_data 0.3.10
+<!-- THIS FILE IS EXCLUSIVELY MAINTAINED by the project ae.ae V0.3.90 -->
+<!-- THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.tpl_namespace_root V0.3.12 -->
+# sys_data 0.3.11
 
 [![GitLab develop](https://img.shields.io/gitlab/pipeline/ae-group/ae_sys_data/develop?logo=python)](
     https://gitlab.com/ae-group/ae_sys_data)
 [![LatestPyPIrelease](
-    https://img.shields.io/gitlab/pipeline/ae-group/ae_sys_data/release0.2.10?logo=python)](
-    https://gitlab.com/ae-group/ae_sys_data/-/tree/release0.2.10)
+    https://img.shields.io/gitlab/pipeline/ae-group/ae_sys_data/release0.3.10?logo=python)](
+    https://gitlab.com/ae-group/ae_sys_data/-/tree/release0.3.10)
 [![PyPIVersions](https://img.shields.io/pypi/v/ae_sys_data)](
     https://pypi.org/project/ae-sys-data/#history)
 
@@ -71,5 +71,5 @@ https://gitlab.com/ae-group/ae_sys_data/-/blob/develop/CONTRIBUTING.rst)
 
 information on the features and usage of this portion are available at
 [ReadTheDocs](
-https://ae.readthedocs.io/en/latest/_autosummary/ae.sys_data.html#module-ae.sys_data
+https://ae.readthedocs.io/en/latest/_autosummary/ae.sys_data.html
 "ae_sys_data documentation").
