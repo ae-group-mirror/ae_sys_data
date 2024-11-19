@@ -102,7 +102,7 @@ from typing import (
 from ae.valid import correct_email, correct_phone       # type: ignore  # mypy --namespace-packages does not work
 
 
-__version__ = '0.3.11'
+__version__ = '0.3.12'
 
 
 ACTION_INSERT = 'INSERT'        #: insert action
@@ -378,7 +378,8 @@ def set_current_index(node: Union[ListType, NodeType], idx: Optional[IdxItemType
 
     :param node:            root node/list (Record or Records/Values instance) to process.
     :param idx:             index value to set (str for field name; int for list index); if given `add` will be ignored.
-    :param add:             value to add to list index; will be ignored if the :paramref:`.idx` argument is specified.
+    :param add:             value to add to list index; will be ignored if the :paramref:`~set_current_index.idx`
+                            argument is specified.
     :return:                the finally set/new index value.
     """
     msg = "set_current_index() expects "

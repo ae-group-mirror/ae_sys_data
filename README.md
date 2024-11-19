@@ -1,16 +1,16 @@
-<!-- THIS FILE IS EXCLUSIVELY MAINTAINED by the project ae.ae V0.3.90 -->
-<!-- THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.tpl_namespace_root V0.3.12 -->
-# sys_data 0.3.11
+<!-- THIS FILE IS EXCLUSIVELY MAINTAINED by the project ae.ae V0.3.94 -->
+<!-- THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.tpl_namespace_root V0.3.14 -->
+# sys_data 0.3.12
 
 [![GitLab develop](https://img.shields.io/gitlab/pipeline/ae-group/ae_sys_data/develop?logo=python)](
     https://gitlab.com/ae-group/ae_sys_data)
 [![LatestPyPIrelease](
-    https://img.shields.io/gitlab/pipeline/ae-group/ae_sys_data/release0.3.10?logo=python)](
-    https://gitlab.com/ae-group/ae_sys_data/-/tree/release0.3.10)
+    https://img.shields.io/gitlab/pipeline/ae-group/ae_sys_data/release0.3.11?logo=python)](
+    https://gitlab.com/ae-group/ae_sys_data/-/tree/release0.3.11)
 [![PyPIVersions](https://img.shields.io/pypi/v/ae_sys_data)](
     https://pypi.org/project/ae-sys-data/#history)
 
->ae namespace module portion sys_data: external system data structures.
+>ae_sys_data module 0.3.12.
 
 [![Coverage](https://ae-group.gitlab.io/ae_sys_data/coverage.svg)](
     https://ae-group.gitlab.io/ae_sys_data/coverage/index.html)
