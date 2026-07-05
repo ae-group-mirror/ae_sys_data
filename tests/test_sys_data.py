@@ -1,18 +1,22 @@
-""" tests for ae_sys_data package """
+""" tests for ae_sys_data package
+
+.. note::
+    had to add hundreds of `# noinspection PyUnresolvedReferences` and `# noinspection PyTypeChecker` comments
+    because PyCharm 2026.1.2 is still very incomplete&buggy in type checking and guarding there are too much.
+"""
 from collections import OrderedDict
 import datetime
 import pytest
-from typing import cast
+from typing import Annotated, Literal, cast
 
 # noinspection PyProtectedMember
 from ae.sys_data import (
     FAD_FROM, FAD_ONTO, FAT_VAL, FAT_REC, FAT_RCX, FAT_SQE, FAT_CAL, FAT_IDX, FAT_CNV,
     ACTION_DELETE, IDX_PATH_SEP, ALL_FIELDS, CALLABLE_SUFFIX,
     Value, Values, Record, Records, _Field, IdxTypes,
-    aspect_key, aspect_key_system, aspect_key_direction, deeper,
-    field_name_idx_path, field_names_idx_paths, idx_path_field_name,
-    compose_current_index, get_current_index, init_current_index, use_current_index, set_current_index,
-    use_rec_default_sys_dir
+    aspect_key, aspect_key_system, aspect_key_direction, compose_current_index, deeper,
+    field_name_idx_path, field_names_idx_paths, get_current_index, idx_path_field_name,
+    init_current_index, is_type, set_current_index, use_current_index, use_rec_default_sys_dir
 )
 
 
@@ -23,7 +27,7 @@ SY = 'Yy'
 
 @pytest.fixture()
 def rec_2f_2s_complete():
-    """ two fields and only partly complete two sub-levels """
+    """ two fields and only partly complete two sublevels """
     r1 = Record(fields=(('fnA', ''),
                         ('fnB0sfnA', 'sfA1v'), ('fnB0sfnB', 'sfB1v'),
                         ('fnB1sfnA', 'sfA2v'), ('fnB1sfnB', 'sfB2v'))
@@ -34,10 +38,104 @@ def rec_2f_2s_complete():
 
 @pytest.fixture()
 def rec_2f_2s_incomplete():
-    """ two fields and only partly complete two sub-levels """
+    """ two fields and only partly complete two sublevels """
     r1 = Record(fields=dict(fnA='', fnB1sfnA='', fnB1sfnB='sfB2v'))
     print(r1)
     return r1
+
+
+import pytest
+from typing import Union
+from types import NoneType
+
+
+# --- Definition der PEP 695 Type-Aliases (Python 3.12+) ---
+type AliasSimple = int
+type AliasUnion = Value | Record | None
+type AliasGeneric = dict[str, int]
+type Composed = dict[str, int] | AliasSimple | AliasUnion | AliasGeneric
+type ModeAlias = Literal["read", "write"]
+
+
+# noinspection PyTypeHints
+@pytest.mark.parametrize(
+    "value, value_type, expected",
+    [
+        # naked/pure types
+        (42, int, True),
+        ("hello", int, False),
+        ({}, dict, True),
+        ({"a": 1}, dict, True),
+        ([1, 2], list, True),
+        ("iterable but no list", list, False),
+
+        # direct pipe-unions (Python 3.10+)
+        ([], list | None, True),
+        (None, list | None, True),
+        ("string", int | float, False),
+
+        # classic typing-unions (Abwärtskompatibilität)
+        (42, Union[int, str], True),
+        (42, int | str, True),
+        (None, Union[int, str], False),
+        (None, int | str, False),
+
+        # classic tuples (isinstance-standard)
+        ([], (list, NoneType), True),
+        (None, (list, NoneType), True),
+        (123, (list, NoneType), False),
+        ([1, 2, 3], list[int], True),
+        ([1, 2, "three"], list[int], False),
+        (("ID", "wrong type"), tuple[str, int], False),
+        ((1, 2, 3), tuple[int, int], False),            # wrong tuple length
+
+        # parametrized generics
+        ({"key": 1}, dict[str, int], True),
+        ({"key": "tst"}, dict[str, int], False),
+        ([1, 2, 3], list[int], True),
+        (42, list[int], False),
+
+        ({1: "text"}, dict[str, str], False),           # wrong key type
+        ({"key": 123}, dict[str, str], False),          # wrong value type
+        ({1: 2}, dict[str, int], False),
+
+        (42, list[()], False),                          # test coverage for empty type arguments
+        ([], list[()], True),
+        ({"a": 1}, dict[()], True),
+
+        # PEP 695 type-aliases (validation via __value__)
+        (100, AliasSimple, True),
+        ("100", AliasSimple, False),
+
+        # PEP 695 complex aliases
+        (Value(), AliasUnion, True),
+        (None, AliasUnion, True),
+        (123, AliasUnion, False),
+        ({"a": 1}, AliasGeneric, True),
+        ([1, 2], AliasGeneric, False),
+
+        (42, Annotated[int, "meta-data"], True),
+        ("kein_int", Annotated[int, "meta-data"], False),
+
+        ([1, 2], Composed, False),
+        (None, Composed, True),
+        (3, Composed, True),
+        ({"a": 3}, Composed, True),
+
+        ("write", ModeAlias, True),
+
+        ("read", Literal["read", "write"], True),
+        ("execute", Literal["read", "write"], False),
+        (123, Literal["read", "write"], False),         # int is not a Literal
+    ]
+)
+def test_is_type(value, value_type, expected: bool):
+    assert is_type(value, value_type) is expected
+
+
+def test_is_type_errors():
+    with pytest.raises(TypeError):
+        assert is_type(None, None) is False
 
 
 class TestHelperMethods:
@@ -89,7 +187,7 @@ class TestHelperMethods:
         assert deeper(-3, None) == -3
 
     def test_idx_path_sep_valid_char(self):
-        # ensure that IDX_PATH_SEP is not a dot character (would break xml element name paths lookups in shif.py)
+        # ensure that IDX_PATH_SEP is not a dot character (would break XML element name paths lookups in shif.py)
         assert IDX_PATH_SEP != '.'
 
     def test_field_name_idx_path(self):
@@ -147,6 +245,7 @@ class TestHelperMethods:
         assert field_name_idx_path('3Test', return_root_fields=True) == (3, 'Test')
 
     def test_field_names_idx_paths(self):
+        # noinspection PyTypeChecker
         assert field_names_idx_paths(['3Test', ('fn', 0, 'sfn'), 9]) == [(3, 'Test'), ('fn', 0, 'sfn'), (9, )]
 
     def test_idx_path_field_name(self):
@@ -181,18 +280,28 @@ class TestHelperMethods:
         assert get_current_index(r) == 'fnA'  # set_val() never change idx/only ini on 1st call (if current_idx is None)
         set_current_index(r, idx='fnB')
         assert get_current_index(r) == 'fnB'
+        # noinspection PyTypeChecker
         assert get_current_index(r.value('fnB')) == 1
+        # noinspection PyUnresolvedReferences
         assert r.value('fnB').idx_min == 1
+        # noinspection PyUnresolvedReferences
         assert r.value('fnB').idx_max == 1
+        # noinspection PyTypeChecker
         assert get_current_index(r.value('fnB', 1)) == 'fnBA'
 
         r.set_val(456, 'fnB', 0, 'fnBA')
         assert get_current_index(r) == 'fnB'
+        # noinspection PyTypeChecker
         assert get_current_index(r.value('fnB')) == 1
+        # noinspection PyTypeChecker
         set_current_index(r.value('fnB'), idx=0)
+        # noinspection PyTypeChecker
         assert get_current_index(r.value('fnB')) == 0
+        # noinspection PyUnresolvedReferences
         assert r.value('fnB').idx_min == 0
+        # noinspection PyUnresolvedReferences
         assert r.value('fnB').idx_max == 1
+        # noinspection PyTypeChecker
         assert get_current_index(r.value('fnB', 1)) == 'fnBA'
 
         assert r.val('fnB', 1, 'fnBA') == 123
@@ -225,35 +334,48 @@ class TestHelperMethods:
 
         r = rec_2f_2s_complete.set_env(system=SX, direction=FAD_ONTO)
         assert r.current_idx == 'fnA'
+        # noinspection PyUnresolvedReferences
         assert r.value('fnB', flex_sys_dir=True).current_idx == 0
         r.add_system_fields((('A' + sep + 'X', 'fnA'), ('B' + sep + 'Y', 'fnB0sfnA'), ('B' + sep + 'Z', 'fnB0sfnB')))
         assert r.current_idx == 'fnA'
+        # noinspection PyUnresolvedReferences
         assert r.value('fnB', flex_sys_dir=True).current_idx == 0
+        # noinspection PyUnresolvedReferences
         assert r.node_child(('fnB', 0)).current_idx == 'sfnA'
 
         assert r.set_current_system_index('A', sep) is None
         assert r.current_idx == 'fnA'
+        # noinspection PyUnresolvedReferences
         assert r.value('fnB', flex_sys_dir=True).current_idx == 0
+        # noinspection PyUnresolvedReferences
         assert r.node_child(('fnB', 0)).current_idx == 'sfnA'
 
         assert r.set_current_system_index('B', sep) is r
         assert r.current_idx == 'fnA'
+        # noinspection PyUnresolvedReferences
         assert r.value('fnB', flex_sys_dir=True).current_idx == 1
+        # noinspection PyUnresolvedReferences
         assert r.node_child(('fnB', 0)).current_idx == 'sfnA'
 
         assert r.set_current_system_index('B', sep) is r
         assert r.current_idx == 'fnA'
+        # noinspection PyUnresolvedReferences
         assert r.value('fnB', flex_sys_dir=True).current_idx == 2
+        # noinspection PyUnresolvedReferences
         assert r.node_child(('fnB', 0)).current_idx == 'sfnA'
 
         assert r.set_current_system_index('B', sep, idx_val=0, idx_add=None) is r
         assert r.current_idx == 'fnA'
+        # noinspection PyUnresolvedReferences
         assert r.value('fnB', flex_sys_dir=True).current_idx == 0
+        # noinspection PyUnresolvedReferences
         assert r.node_child(('fnB', 0)).current_idx == 'sfnA'
 
         assert r.set_current_system_index('B', sep, idx_add=2) is r
         assert r.current_idx == 'fnA'
+        # noinspection PyUnresolvedReferences
         assert r.value('fnB', flex_sys_dir=True).current_idx == 2
+        # noinspection PyUnresolvedReferences
         assert r.node_child(('fnB', 0)).current_idx == 'sfnA'
 
     def test_use_rec_default_sys_dir(self):
@@ -412,10 +534,15 @@ class TestField:
     def test_node_child(self, rec_2f_2s_complete):
         r = rec_2f_2s_complete
         f = r.node_child(('fnA', ))
+        # noinspection PyUnresolvedReferences
         assert f.node_child(tuple()) is None
+        # noinspection PyUnresolvedReferences,PyInvalidCast
         assert f.node_child(cast(IdxTypes, (('invalid_idx_path[0]',),))) is None
+        # noinspection PyUnresolvedReferences,PyInvalidCast
         assert f.node_child(cast(IdxTypes, datetime)) is None
+        # noinspection PyUnresolvedReferences
         assert f.node_child(cast(IdxTypes, '')) is None
+        # noinspection PyUnresolvedReferences,PyInvalidCast
         assert f.node_child(cast(IdxTypes, None)) is None
 
         f = _Field(root_rec=r, root_idx=('test',))
@@ -497,9 +624,13 @@ class TestField:
         r.add_system_fields((('tsf', 'test'), ))
         f = r.node_child(('test',))
 
+        # noinspection PyUnresolvedReferences
         assert f.name(system=SX, direction=FAD_ONTO) == 'tsf'
+        # noinspection PyUnresolvedReferences
         assert f.del_name(system=SX, direction=FAD_ONTO) is f
+        # noinspection PyUnresolvedReferences
         assert f.name(system=SX, direction=FAD_ONTO) == 'test'
+        # noinspection PyUnresolvedReferences
         assert f.name(system=SX, direction=FAD_ONTO, flex_sys_dir=False) is None
 
     def test_calculator(self):
@@ -559,27 +690,41 @@ class TestField:
         f = r.node_child(('test',))
 
         r.add_system_fields((('tsf', 'test', 'clear_val'),))
+        # noinspection PyUnresolvedReferences
         assert f.val() == 'clear_val'
 
+        # noinspection PyUnresolvedReferences
         assert f.clear_leaves(system=None, direction=None) is f
+        # noinspection PyUnresolvedReferences
         assert f.val() == 'clear_val'
 
+        # noinspection PyUnresolvedReferences
         f.set_val('new_val')
+        # noinspection PyUnresolvedReferences
         assert f.clear_leaves(system=None, direction=None) is f
+        # noinspection PyUnresolvedReferences
         assert f.val() == 'clear_val'
 
+        # noinspection PyUnresolvedReferences
         f.set_val('new_val', system=SX, direction=FAD_ONTO, flex_sys_dir=False)
+        # noinspection PyUnresolvedReferences
         assert f.clear_leaves(system=None, direction=None) is f
+        # noinspection PyUnresolvedReferences
         assert f.val(system=SX, direction=FAD_ONTO) == 'clear_val'
 
     def test_parent(self, rec_2f_2s_complete):
         r = rec_2f_2s_complete
         f = r.node_child(('fnB', 1, 'sfnB'))
 
+        # noinspection PyUnresolvedReferences
         assert f.parent() is r.node_child(('fnB', 1))
+        # noinspection PyUnresolvedReferences
         assert f.parent(value_types=(Record, )) is r.node_child(('fnB', 1))
+        # noinspection PyUnresolvedReferences
         assert f.parent(value_types=(Records, )) is r.node_child(('fnB', )).value()
+        # noinspection PyUnresolvedReferences
         assert r.node_child(('fnB', )).parent() is r
+        # noinspection PyUnresolvedReferences
         assert r.node_child(('fnA', )).parent() is r
 
     def test_pull(self):
@@ -587,26 +732,39 @@ class TestField:
         f = r.node_child(('test',))
         r.add_system_fields((('tsf', 'test', 'init_val'),))
 
+        # noinspection PyUnresolvedReferences
         f.set_val('sys_val', system=SX, direction=FAD_FROM, flex_sys_dir=False)
+        # noinspection PyUnresolvedReferences
         assert f.pull(SX, r, ('test', )) is f
+        # noinspection PyUnresolvedReferences
         assert f.val() == 'sys_val'
 
+        # noinspection PyUnresolvedReferences
         f.set_val(None, system=SX, direction=FAD_FROM, flex_sys_dir=False)
+        # noinspection PyUnresolvedReferences
         assert f.pull(SX, r, ('test', )) is f
+        # noinspection PyUnresolvedReferences
         assert f.val() == ''
 
     def test_push(self):
         r = Record(fields=dict(test='xxx'), system=SX, direction=FAD_ONTO)
         f = r.node_child(('test',))
         r.add_system_fields((('tsf', 'test', 'init_val'),))
+        # noinspection PyUnresolvedReferences
         f.set_val('sys_val', system=SX, direction=FAD_ONTO, flex_sys_dir=False)
 
+        # noinspection PyUnresolvedReferences
         f.set_val('new_val')
+        # noinspection PyUnresolvedReferences
         assert f.push(SX, r, ('test', )) is f
+        # noinspection PyUnresolvedReferences
         assert f.val(system=SX, direction=FAD_ONTO, flex_sys_dir=False) == 'new_val'
 
+        # noinspection PyUnresolvedReferences
         f.set_val(None)
+        # noinspection PyUnresolvedReferences
         assert f.push(SX, r, ('test', )) is f
+        # noinspection PyUnresolvedReferences
         assert f.val(system=SX, direction=FAD_ONTO, flex_sys_dir=False) == ''
 
     def test_system_record_val_add_fields(self, rec_2f_2s_complete):
@@ -614,60 +772,86 @@ class TestField:
         f = r.node_child(('fnA',))
         r.add_system_fields((('fnAXx', 'fnA', 'Av'), ('fnBXx', 'fnB'), ('sfnAXx', 'fnB0sfnA'), ('sfnBXx', 'fnB0sfnB')))
 
+        # noinspection PyUnresolvedReferences
         assert f.system_record_val == f.srv
+        # noinspection PyUnresolvedReferences
         assert f.srv() == 'Av'
+        # noinspection PyUnresolvedReferences
         assert f.srv('fnA') == 'Av'
+        # noinspection PyUnresolvedReferences
         assert f.srv('fnB') == r.val('fnB')
+        # noinspection PyUnresolvedReferences
         assert f.srv('fnB', 0, 'sfnA') == 'sfA1v'
+        # noinspection PyUnresolvedReferences
         assert f.srv('fnB', 1, 'sfnA') == 'sfA2v'
 
     def test_system_record_val_node_child(self, rec_2f_2s_complete):
         r = rec_2f_2s_complete
         f = r.node_child(('fnB', 1, 'sfnB'))
 
+        # noinspection PyUnresolvedReferences
         assert f.system_record_val() == 'sfB2v'
+        # noinspection PyUnresolvedReferences
         assert f.system_record_val('fnA') == ''
+        # noinspection PyUnresolvedReferences
         assert f.system_record_val('fnB', 0, 'sfnA') == 'sfA1v'
+        # noinspection PyUnresolvedReferences
         assert f.system_record_val('fnB', 0, 'sfnB') == 'sfB1v'
+        # noinspection PyUnresolvedReferences
         assert f.system_record_val('fnB', 1, 'sfnA') == 'sfA2v'
+        # noinspection PyUnresolvedReferences
         assert f.system_record_val('fnB', 1, 'sfnB') == 'sfB2v'
 
     def test_in_actions_basics(self, rec_2f_2s_complete):
         r = rec_2f_2s_complete
         f = r.node_child(('fnB', 1, 'sfnB'))
 
+        # noinspection PyUnresolvedReferences
         assert f.in_actions() is False
+        # noinspection PyUnresolvedReferences
         assert f.in_actions('') is True
 
     def test_in_actions_with_del(self, rec_2f_2s_complete):
         r = rec_2f_2s_complete.set_env(system=SX, direction=FAD_FROM)
         f = r.node_child(('fnA',))
 
+        # noinspection PyUnresolvedReferences
         assert f.in_actions == f.ina
 
+        # noinspection PyUnresolvedReferences
         assert not f.ina(ACTION_DELETE)
 
         r.set_env(action=ACTION_DELETE)
+        # noinspection PyUnresolvedReferences
         assert f.ina(ACTION_DELETE)
 
     def test_record_field_val(self, rec_2f_2s_complete):
         r = rec_2f_2s_complete
         f = r.node_child(('fnB', 1, 'sfnB'))
 
+        # noinspection PyUnresolvedReferences
         assert f.record_field_val('fnA') == ''
+        # noinspection PyUnresolvedReferences
         assert f.record_field_val('fnB', 0, 'sfnA') == 'sfA1v'
+        # noinspection PyUnresolvedReferences
         assert f.record_field_val('fnB', 0, 'sfnB') == 'sfB1v'
+        # noinspection PyUnresolvedReferences
         assert f.record_field_val('fnB', 1, 'sfnA') == 'sfA2v'
+        # noinspection PyUnresolvedReferences
         assert f.record_field_val('fnB', 1, 'sfnB') == 'sfB2v'
 
     def test_current_records_idx(self, rec_2f_2s_complete):
         r = rec_2f_2s_complete
         f = r.node_child(('fnB', 1, 'sfnB'))
 
+        # noinspection PyUnresolvedReferences
         assert f.current_records_idx() == 0
+        # noinspection PyUnresolvedReferences
         assert f.current_records_idx(system="Ts") is None
 
+        # noinspection PyUnresolvedReferences
         assert f.crx() == 0
+        # noinspection PyUnresolvedReferences
         assert f.crx(system='Ts') is None
 
 
@@ -686,11 +870,13 @@ class TestRecord:
 
         assert r['test'] == 'xxx'
         assert r.val('test') == 'xxx'
+        # noinspection PyUnresolvedReferences
         assert r.get('test').val() == 'xxx'     # get() always gets field (independent of field_items)
 
         r.field_items = True
         assert r['test'].val() == 'xxx'
         assert r.val('test') == 'xxx'
+        # noinspection PyUnresolvedReferences
         assert r.get('test').val() == 'xxx'
 
     def test_field_lookup_sys_name(self):
@@ -699,7 +885,9 @@ class TestRecord:
 
         field = r.node_child(('test', ))
         assert field
+        # noinspection PyUnresolvedReferences
         assert field.root_idx() == ('test', )
+        # noinspection PyUnresolvedReferences
         assert field.root_idx(system=SX, direction=FAD_ONTO) == ('tsf', )
 
         assert r['tsf'] == 'xxx'
@@ -1013,8 +1201,10 @@ class TestRecord:
         assert r.node_child(('test',)) is None
 
         r = rec_2f_2s_incomplete
+        # noinspection PyUnresolvedReferences
         assert r.node_child(('fnA',)).val() == ''
         idx_path = ('fnB', 1, 'sfnB')
+        # noinspection PyUnresolvedReferences
         assert r.node_child(idx_path).val() == 'sfB2v'
 
         r[('fnB', 1, 'sfnB')] = 11
@@ -1025,10 +1215,15 @@ class TestRecord:
         assert r[('fnB', 1, 'sfnB')].val() == 11
         assert r[('fnB', 1, 'sfnB')].val(system=SX) == 33
         assert r[('fnB', 1, 'sfnB')].val(system=SX, direction='From') == 33
+        # noinspection PyUnresolvedReferences
         assert r.node_child(('fnB', 1, 'sfnB')).val(system=SX) == 33
+        # noinspection PyUnresolvedReferences
         assert r.node_child(('fnB', 1, 'sfnB')).val(system=SX, direction=None) == 33
+        # noinspection PyUnresolvedReferences
         assert r.node_child('fnB1sfnB').val(system=SX) == 33
+        # noinspection PyUnresolvedReferences
         assert r.node_child('fnB1sfnB_From_Xx').val(system=SX) == 33
+        # noinspection PyUnresolvedReferences
         assert r.node_child('fnB1sfnB_From_Xx').val(system=SX) == 33
 
         # replace Records/Record children with Record child in fnB
@@ -1039,21 +1234,33 @@ class TestRecord:
         with pytest.raises(AssertionError):
             r['fnB'].set_value(sr, protect=True)
         r['fnB'].set_value(sr)
+        # noinspection PyUnresolvedReferences
         assert r.node_child(('fnB', 'sfnB_rec')).val(system=SX) == 66
+        # noinspection PyUnresolvedReferences
         assert r.node_child(('fnB', 'sfnB_rec')).val(system=SX, direction=None) == 66
+        # noinspection PyUnresolvedReferences
         assert r.node_child(('fnB', 'sfnB_rec')).val(system=SX, direction='') == 66
+        # noinspection PyUnresolvedReferences
         assert r.node_child(('fnB', 'sfnB_rec')).val(system=SX, direction=FAD_FROM) == 66
+        # noinspection PyUnresolvedReferences
         assert r.node_child(('fnB', 'sfnB_rec')).val(system=SX, direction=FAD_ONTO) == 66
         with pytest.raises(AssertionError):
+            # noinspection PyUnresolvedReferences
             assert r.node_child(('fnB', 'sfnB_rec')).val(system=SX, direction='test') == 66
 
         r.set_env(system=SX, direction='From')
+        # noinspection PyUnresolvedReferences
         assert r.node_child(('fnB', 'sfnB_rec')).val(system=SX) == 66
+        # noinspection PyUnresolvedReferences
         assert r.node_child(('fnB', 'sfnB_rec')).val(system=SX, direction=None) == 66
+        # noinspection PyUnresolvedReferences
         assert r.node_child(('fnB', 'sfnB_rec')).val(system=SX, direction='') == 66
+        # noinspection PyUnresolvedReferences
         assert r.node_child(('fnB', 'sfnB_rec')).val(system=SX, direction=FAD_FROM) == 66
+        # noinspection PyUnresolvedReferences
         assert r.node_child(('fnB', 'sfnB_rec')).val(system=SX, direction=FAD_ONTO) == 66
         with pytest.raises(AssertionError):
+            # noinspection PyUnresolvedReferences
             assert r.node_child(('fnB', 'sfnB_rec')).val(system=SX, direction='test') == 66
 
     def test_copy(self):
@@ -1130,15 +1337,21 @@ class TestRecord:
         r.add_system_fields((('fnAXx', 'fnA'), ('sfnX1Xx', 'fnX0sfnX1')))
         assert len(r) == 3
         assert len(list(r.leaves())) == 6
+        # noinspection PyUnresolvedReferences
         assert r.node_child('fnA').name(system=SX, direction=FAD_FROM) == 'fnAXx'
+        # noinspection PyUnresolvedReferences
         assert r.node_child('fnB0sfnA').name(system=SX, direction=FAD_FROM) == 'sfnA'
+        # noinspection PyUnresolvedReferences
         assert r.node_child('fnB0sfnB').name(system=SX, direction=FAD_FROM) == 'sfnB'
+        # noinspection PyUnresolvedReferences
         assert r.node_child('fnX0sfnX1').name(system=SX, direction=FAD_FROM) == 'sfnX1Xx'
 
         r.add_system_fields((('sfnAXx', 'fnB0sfnA'), ('sfnX2Xx', 'fnX0sfnX2')), extend=False)
         assert len(r) == 3
         assert len(list(r.leaves())) == 6
+        # noinspection PyUnresolvedReferences
         assert r.node_child('fnB0sfnA').name(system=SX, direction=FAD_FROM) == 'sfnAXx'
+        # noinspection PyUnresolvedReferences
         assert r.node_child('fnB0sfnB').name(system=SX, direction=FAD_FROM) == 'sfnB'
         assert r.node_child('fnX0sfnX2') is None
 
@@ -1399,11 +1612,13 @@ class TestRecord:
 
         r = rec_2f_2s_complete.copy()
         r.set_env(system=SS, direction=FAD_FROM).add_system_fields((('DbCol1', 'fnA'), ('DbCol2', 'fnX')))
+        # noinspection PyUnresolvedReferences
         r.node_child('fnX').set_sql_expression('db_expr')
         assert r.sql_select(SS, col_names=('DbCol2',)) == ['DbCol2']
 
         r = rec_2f_2s_complete.copy()
         r.set_env(system=SS, direction=FAD_FROM).add_system_fields((('DbCol1', 'fnA'), ('DbCol2', 'fnX')))
+        # noinspection PyUnresolvedReferences
         r.node_child('fnX').set_sql_expression('db_expr', system=SS, direction=FAD_FROM)
         assert r.sql_select(SS, col_names=('DbCol2',)) == ['db_expr AS DbCol2']
 
@@ -1455,7 +1670,7 @@ class TestRecords:
         assert isinstance(Records(), list)
 
     def test_repr_eval(self):
-        _ = Values      # added to remove Pycharm warning
+        _ = Values      # added to remove PyCharm warning
         rep = repr(Records())
         assert eval(rep) == Records()
 
@@ -1521,6 +1736,7 @@ class TestRecords:
         rs.set_node_child(33, 4, 'fnA')
         assert rs.val(4, 'fnA') == 33
 
+        # noinspection PyUnresolvedReferences
         rs[2].set_val(99, 'sfnA')
         assert rs.val(2, 'sfnA') == 99
 
@@ -1532,18 +1748,23 @@ class TestRecords:
         rs.append(Record())
         assert rs.value()
         assert rs.value() == Records((Record(), ))
+        # noinspection PyTypeChecker
         assert len(rs.value()) == 1
         rs.set_node_child(33, 3, 'fnA')
+        # noinspection PyTypeChecker
         assert len(rs.value()) == 4
         assert rs.value(3, 'fnA') == Value((33, ))
 
     def test_set_value(self):
         rs = Records()
         rs.set_node_child(33, 3, 'fnA')
+        # noinspection PyUnresolvedReferences
         assert rs.value(3, 'fnA').val() == 33
         rs.set_value(Value().set_val(66), 3, 'fnA')
+        # noinspection PyUnresolvedReferences
         assert rs.value(3, 'fnA').val() == 66
         rs.set_value(Value().set_val(99), 3, 'fnA', root_rec=Record(), root_idx=('root_fn',))
+        # noinspection PyUnresolvedReferences
         assert rs.value(3, 'fnA').val() == 99
 
     def test_clear_leaves(self):
@@ -1556,6 +1777,7 @@ class TestRecords:
         assert len(rs) == 4
 
         rs.clear_leaves(reset_lists=False)
+        # noinspection PyUnresolvedReferences
         assert rs.value(3, 'fnA').val() == ''
         assert len(rs) == 4
 
@@ -1565,6 +1787,7 @@ class TestRecords:
 
     def test_append_sub_record(self):
         r1 = Record(fields=dict(fnA=1, fnB0sfnA=2, fnB0sfnB=3))
+        # noinspection PyTypeChecker
         assert len(r1.value('fnB')) == 1
         assert r1.val('fnB', 0, 'sfnA') == 2
         assert r1.val('fnB', 0, 'sfnB') == 3
@@ -1573,14 +1796,18 @@ class TestRecords:
         assert r1.val('fnB', 2, 'sfnA') is None
         assert r1.val('fnB', 2, 'sfnB') is None
 
+        # noinspection PyUnresolvedReferences
         r1.value('fnB').append_record(root_rec=r1, root_idx=('fnB', ))
+        # noinspection PyTypeChecker
         assert len(r1.value('fnB')) == 2
         assert r1.val('fnB', 0, 'sfnA') == 2
         assert r1.val('fnB', 0, 'sfnB') == 3
         assert r1.val('fnB', 1, 'sfnA') == ''
         assert r1.val('fnB', 1, 'sfnB') == ''
 
+        # noinspection PyUnresolvedReferences
         r1.node_child('fnB').append_record(root_rec=r1, root_idx=('fnB', ))
+        # noinspection PyTypeChecker
         assert len(r1.value('fnB')) == 3
         assert r1.val('fnB', 0, 'sfnA') == 2
         assert r1.val('fnB', 0, 'sfnB') == 3
@@ -1592,6 +1819,7 @@ class TestRecords:
     def test_append_sub_record_to_foreign_records(self):
         r1 = Record(fields=dict(fnA=1, fnB0sfnA=2, fnB0sfnB=3),
                     field_items=True)
+        # noinspection PyTypeChecker
         assert len(r1.value('fnB')) == 1
         assert r1.val('fnB', 0, 'sfnA') == 2
         assert r1.val('fnB', 0, 'sfnB') == 3
@@ -1602,6 +1830,7 @@ class TestRecords:
 
         r2 = Record(fields=dict(fnA=7, fnB1sfnA=8, fnB1sfnB=9),
                     field_items=True)
+        # noinspection PyTypeChecker
         assert len(r2.value('fnB')) == 2
         assert r2.val('fnB', 0, 'sfnA') is None
         assert r2.val('fnB', 0, 'sfnB') is None
@@ -1610,6 +1839,7 @@ class TestRecords:
         assert r2.val('fnB', 2, 'sfnA') is None
         assert r2.val('fnB', 2, 'sfnB') is None
 
+        # noinspection PyUnresolvedReferences,PyTypeChecker
         r2.value('fnB').append_record(root_rec=r2, root_idx=('fnB', ), from_rec=r1.value('fnB', 0), clear_leaves=False)
         assert r2.val('fnB', 2, 'sfnA') == 2
         assert r2.val('fnB', 2, 'sfnB') == 3
@@ -1618,6 +1848,7 @@ class TestRecords:
         assert r2['fnB'].root_idx() == ('fnB', )
         assert r2[('fnB', 2, 'sfnB')].root_idx() == ('fnB', 2, 'sfnB')
 
+        # noinspection PyUnresolvedReferences,PyTypeChecker
         r1.value('fnB').append_record(root_rec=r1, root_idx=('fnB', ), from_rec=r2.value('fnB', 1), clear_leaves=False)
         assert r1.val('fnB', 1, 'sfnA') == 8
         assert r1.val('fnB', 1, 'sfnB') == 9
@@ -1628,36 +1859,50 @@ class TestRecords:
 
     def test_compare_records(self, rec_2f_2s_complete):
         r = rec_2f_2s_complete
+        # noinspection PyUnresolvedReferences
         rs1 = r.value('fnB').copy(deepness=-1, root_rec=r, root_idx=('fnB',))
+        # noinspection PyUnresolvedReferences
         assert len(rs1.compare_records(Records(), ('sfnA', 'sfnB'))) == 2
 
+        # noinspection PyUnresolvedReferences
         rs2 = r.value('fnB').copy(deepness=-1, root_rec=r, root_idx=('fnB',))
+        # noinspection PyTypeChecker,PyUnresolvedReferences
         assert len(rs1.compare_records(rs2, ('sfnA', 'sfnB'))) == 0
 
+        # noinspection PyUnresolvedReferences
         rs2.set_val('ChangedVal', 0, 'sfnA')
+        # noinspection PyTypeChecker,PyUnresolvedReferences
         assert len(rs1.compare_records(rs2, ('sfnA', 'sfnB'))) == 2
 
+        # noinspection PyTypeChecker,PyUnresolvedReferences
         assert len(rs1.compare_records(rs2, ('sfnA', 'sfnB'), record_comparator=lambda r1, r2: [])) == 3
 
+        # noinspection PyTypeChecker,PyUnresolvedReferences
         assert len(rs1.compare_records(rs2, ('sfnA', 'sfnB'), record_comparator=lambda r1, r2: ['AAA'])) == 9
 
+        # noinspection PyTypeChecker,PyUnresolvedReferences
         assert len(rs1.compare_records(rs2, ('sfnA', 'sfnB'), record_comparator=lambda r1, r2: ['AAA', 'BBB'])) == 17
 
     def test_merge_records(self, rec_2f_2s_complete):
         rs1 = Records()
         assert len(rs1) == 0
+        # noinspection PyUnresolvedReferences
         rs2 = rec_2f_2s_complete.value('fnB').copy(deepness=-1, root_rec=rec_2f_2s_complete, root_idx=('fnB',))
 
+        # noinspection PyTypeChecker
         assert rs1.merge_records(rs2) is rs1
         assert len(rs1) == len(rs2)
         assert rs1 == rs2
 
+        # noinspection PyTypeChecker
         assert rs1.merge_records(rs2, ('sfnA', )) is rs1
         assert len(rs1) == len(rs2)
         assert rs1 == rs2
 
         old_len = len(rs1)
+        # noinspection PyUnresolvedReferences
         rs2.set_val('changed_val', 0, 'sfnA')
+        # noinspection PyTypeChecker
         assert rs1.merge_records(rs2, ('sfnA', )) is rs1
         assert len(rs1) == old_len + 1
 
@@ -1807,6 +2052,7 @@ class TestCopy:
         assert rec_2f_2s_incomplete.val('fnB', 1, 'sfnB') == 'sfB2v'
         assert r1c.val('fnB', 1, 'sfnB') == 'sfB2v'
 
+        # noinspection PyUnresolvedReferences
         rec_2f_2s_incomplete.value('fnB', 1, 'sfnB').set_val('sfB2v_new')
         assert rec_2f_2s_incomplete.val('fnB', 1, 'sfnB') == 'sfB2v_new'
         assert r1c.val('fnB', 1, 'sfnB') == 'sfB2v_new'
@@ -1873,7 +2119,9 @@ class TestSystemDirections:
         for idx in r.leaf_indexes():
             if len(idx) > 1 and idx[1] > 0:
                 continue
+            # noinspection PyUnresolvedReferences
             assert r.node_child(idx).name(system=SX) == r.node_child(idx).name() + SX
+            # noinspection PyUnresolvedReferences
             assert r.node_child(idx).name(system=SY) == r.node_child(idx).name() + SY
 
     def test_multi_sys_val_rec(self, rec_2f_2s_complete):
@@ -1911,6 +2159,7 @@ class TestSystemDirections:
             assert isinstance(r.val(*idx), str)
             assert r.val(*idx) in ('', 'sfA1v', 'sfA2v', 'sfB1v', 'sfB2v')
             assert r.val(*idx, system=SX) == i
+            # noinspection PyUnresolvedReferences
             r.node_child(idx).pull(SX, r, idx)
             assert r.val(*idx) == i + 10
             assert r.val(*idx, system=SX) == i
@@ -1931,6 +2180,7 @@ class TestSystemDirections:
             assert isinstance(r.val(*idx), str)
             assert r.val(*idx) in ('', 'sfA1v', 'sfA2v', 'sfB1v', 'sfB2v')
             assert r.val(*idx, system=SX) == i
+            # noinspection PyUnresolvedReferences
             r.node_child(idx).pull(SX, r, idx)
             assert r.val(*idx) == i + 10
             assert r.val(*idx, system=SX) == i
