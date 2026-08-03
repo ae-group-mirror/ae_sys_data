@@ -104,13 +104,15 @@ from collections import OrderedDict
 from collections.abc import Callable, Generator, Iterable, MutableSequence, Sequence
 from typing import (
     TYPE_CHECKING,
+    # created issue #740 in sphinx-autodoc-typhints for build-crash on module importing TypeAliasType AND
+    # added workaround in aedev-project-tpls.templates-fSt-PutMar-conf.py
     Any, Annotated, Collection, Literal, Mapping, TypeAliasType, TypeVar, Union, cast, get_args, get_origin)
 from typing_extensions import TypeIs                    # needed only for Python < 3.13
 
 from ae.valid import correct_email, correct_phone       # type: ignore  # mypy --namespace-packages does not work
 
 
-__version__ = '0.3.13'
+__version__ = '0.3.14'
 
 
 ACTION_INSERT = 'INSERT'        #: insert action
