@@ -99,6 +99,7 @@ from __future__ import annotations  # allow type forward references (PEP 563), c
 
 import datetime
 import keyword
+import reprlib
 import types
 from collections import OrderedDict
 from collections.abc import Callable, Generator, Iterable, MutableSequence, Sequence
@@ -110,7 +111,7 @@ from typing_extensions import TypeIs                    # needed only for Python
 from ae.valid import correct_email, correct_phone       # type: ignore  # mypy --namespace-packages does not work
 
 
-__version__ = '0.3.15'
+__version__ = '0.3.16'
 
 
 ACTION_INSERT = 'INSERT'        #: insert action
@@ -626,6 +627,7 @@ class Value(list):
                     raise IndexError(f"Value.__setitem__() expects key of type int, but got {key=}") from exc
                 self.append(value)
 
+    @reprlib.recursive_repr()
     def __repr__(self) -> str:
         """ representation which can be used to serialize and re-create :class:`Value` instance.
 
@@ -732,6 +734,7 @@ class Values(list):
         self.idx_max: int | None
         self.current_idx = self.idx_min = self.idx_max = None
 
+    @reprlib.recursive_repr()
     def __repr__(self) -> str:
         return ("Records" if isinstance(self, Records) else "Values") + "([" + ",".join(repr(v) for v in self) + "])"
 
@@ -977,6 +980,7 @@ class Record(OrderedDict):
         self.sys_name_field_map: dict[str, _Field] = {}     # map system field name as key to _Field instance(as value)
         self.collected_system_fields: list[_Field] = []     # system fields found by collect_system_fields()
 
+    @reprlib.recursive_repr()
     def __repr__(self) -> str:
         ret = "Record("
         if self._fields:
