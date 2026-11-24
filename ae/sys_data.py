@@ -1,5 +1,5 @@
 # pylint: disable=too-many-lines
-# noinspection GrazieInspection
+# noinspection GrazieInspection,GrazieStyle
 """
 external system data structures
 ===============================
@@ -43,10 +43,10 @@ the following diagram is showing a complex data structure with all the possible 
         rec1:A -> "Value (of Field A)" [minlen=3]
         rec1:B -> "Values"
         "Values" -> "Value (of one Values item)" [minlen=2 arrowhead=crow style=tapered penwidth=3]
-        rec2 [label="{<rec2>Record (sub-record) | { <CA>Field CA | <CB>Field CB | <CN>... } }"]
+        rec2 [label="{<rec2>Record (sub-record) | { <CA>Field CA | <CB>Field CB | <CN> } }"]
         rec1:C -> rec2
         rec2:CA -> "Value (of Field CA)" [minlen=2]
-        rec3 [label="{<rec3>Record (sub-records-sub-record) | { <DA>Field DA | <DB>Field DB | <DN>... } }"]
+        rec3 [label="{<rec3>Record (sub-records-sub-record) | { <DA>Field DA | <DB>Field DB | <DN> } }"]
         rec1:D -> "Records (sub-records)"
         "Records (sub-records)" -> rec3 [arrowhead=crow style=tapered penwidth=3]
         rec3:DA -> "Value (of Field DA)"
@@ -111,7 +111,7 @@ from typing_extensions import TypeIs                    # needed only for Python
 from ae.valid import correct_email, correct_phone       # type: ignore  # mypy --namespace-packages does not work
 
 
-__version__ = '0.3.16'
+__version__ = '0.3.17'
 
 
 ACTION_INSERT = 'INSERT'        #: insert action
@@ -242,10 +242,12 @@ def compose_current_index(node: ListType | NodeType, idx_path: IdxPathType, use_
         curr_idx += (idx, )
         if not idx2:
             break
+        # noinspection unresolved-references
         if node.node_child((idx,)) is None:       # if idx not exists then assume sub-path idx2 is correct
             curr_idx += tuple(idx2)
             break
 
+        # noinspection unresolved-references
         n_v = node.value(idx, flex_sys_dir=True)        # mypy * 2
         assert is_type(n_v, ParentType), f"compose_current_index() expects ParentType at {idx} of {node}"
         node = n_v
@@ -470,7 +472,7 @@ def set_current_index(node: ListType | NodeType, idx: IdxItemType | None = None,
 # pylint: disable=too-many-arguments,too-many-positional-arguments
 def string_to_records(str_val: str, field_names: Sequence, rec_sep: str = ',', fld_sep: str = '=',
                       root_rec: Record | None = None, root_idx: IdxPathType = ()) -> Records:
-    """ convert formatted string into a :class:`Records` instance containing several :class:`Record` instances.
+    """ convert formatted string into an :class:`Records` instance containing several :class:`Record` instances.
 
     :param str_val:     formatted string to convert.
     :param field_names: list/tuple of field names of each record
@@ -581,7 +583,6 @@ def use_rec_default_sys_dir(rec: Record | None, system: AspectKeyType | None, di
         system = rec.system
     if direction is None:
         direction = rec.direction
-    # noinspection PyTypeChecker
     return system, direction
 
 
@@ -929,8 +930,8 @@ class Values(list):
 class Record(OrderedDict):
     """ instances of this mapping class are used to represent record-like data structures.
 
-    isinstance(..., dict) not working if using MutableMapping instead of OrderedDict as super class. and dict
-    cannot be used as super class because instance as kwarg will then not work: see the Groxx's answer in stackoverflow
+    isinstance(rec, dict) does not work if using MutableMapping instead of OrderedDict as super class. and dict
+    cannot be used as super class because instance as kwarg will then not work: see Groxx's answer in stackoverflow
     question at https://stackoverflow.com/questions/3387691/how-to-perfectly-override-a-dict/47361653#47361653.
     """
     # pylint: disable=too-many-arguments,too-many-positional-arguments
@@ -946,7 +947,7 @@ class Record(OrderedDict):
                             or list of (field_name, fld_or_val) tuples.
         :param system:      main/current system of this record,
         :param direction:   interface direction of this record.
-        :param action:      current action (see ACTION_INSERT, ACTION_SEARCH, ACTION_DELETE, ...)
+        :param action:      current action (e.g. ACTION_INSERT, ACTION_SEARCH, ACTION_DELETE)
         :param root_rec:    root record of this record (def=self will be a root record).
         :param root_idx:    root index of this record (def=()).
         :param field_items: pass True to get Record items - using __getitem__() - as of type _Field (not as val()).
@@ -1001,7 +1002,7 @@ class Record(OrderedDict):
         assert isinstance(idx_path, PATH_TYPES), f"Record.__contains__() expects {PATH_TYPES} in idx_path arg"   # mypy
         item = self.node_child(idx_path)
         # on executing self.pop() no __delitem__ will be called instead python OrderedDict first pops the item
-        # then is calling this method, although super().__contains__() still returns True but then calls __getitem__()
+        # then is calling this method, although super().__contains__() still returns True but then calls __getitem__();
         # (again with this instance where the item got already removed from). so next two lines are not helping:
         # if not item:
         #    item = super().__contains__(idx_path)
@@ -1120,6 +1121,7 @@ class Record(OrderedDict):
                     ror = Record() if isinstance(idx2[0], str) else Records()
                     init_current_index(ror, tuple(idx2), use_curr_idx)
                     self.set_value(ror, fld_idx, root_rec=root_rec, root_idx=root_idx[:-1], use_curr_idx=use_curr_idx)
+                # noinspection unresolved-references
                 ror.set_node_child(fld_or_val, *idx2, system=system, direction=direction, protect=protect,
                                    root_rec=root_rec, root_idx=root_idx, use_curr_idx=use_curr_idx)
 
@@ -1935,6 +1937,7 @@ class Record(OrderedDict):
             key: IdxTypes = field.name(system=system, direction=direction, flex_sys_dir=False)
             if key and (not filter_fields or not filter_fields(field)):
                 key_path = tuple(idx_path[:-1] + (key, )) if system and use_system_key else idx_path
+                # noinspection unsupported-operator
                 if key_type == tuple:
                     key = cast(IdxPathType, key_path)
                 elif key_type == str:
@@ -2075,7 +2078,6 @@ class Records(Values):
 
         if not idx2:
             assert not protect, f"Records.set_val() pass protect=False to overwrite {idx}"
-            # noinspection PyTypeChecker
             # without above: strange PyCharm type hint warning: Type 'int' doesn't have expected attribute '__len__'
             self[idx] = val if isinstance(val, Record) else Record(template=self, fields=val,
                                                                    root_rec=root_rec, root_idx=root_idx)
@@ -2227,6 +2229,7 @@ class Records(Values):
 
 
 # pylint: disable=too-many-public-methods
+# noinspection unreachable-code
 class _Field:
     """ Internal/Private class used by :class:`Record` to create record field instances.
 
@@ -2237,9 +2240,9 @@ class _Field:
     * store field value(s)
     * define callable(s) to convert, filter or validate field values
     * associate the root record and root index
-    * store any other user-defined field properties (like SQL column expressions, comments, ...)
+    * store any other user-defined field properties (like SQL column expressions, comments)
 
-    the :data:`FAT_ALL` constant contains all pre-defined aspects (see the other FAT_* constants defined at the
+    the :data:`ALL_FATS` constant contains all pre-defined aspects (see the other FAT_* constants defined at the
     top of this module). these values are called 'aspect keys' and are used as dict keys in the private dict.
 
     each aspect can additionally have a separate property for each system/direction - in this case the aspect
@@ -2353,6 +2356,7 @@ class _Field:
         if value and len(idx_path) > 0:
             # noinspection PyUnresolvedReferences
             value = value.value(*idx_path, system=system, direction=direction, flex_sys_dir=flex_sys_dir)
+        # noinspection bad-return
         return value
 
     # pylint: disable=too-many-arguments
@@ -2474,6 +2478,7 @@ class _Field:
                 return self             # RETURN
 
         elif isinstance(a_val, (Value, type(None))):
+            # noinspection string-conversion-without-dunder-method
             assert extend and not protect, \
                 f"_Field.set_val({value}, {idx_path}): value {a_val} exists - change extend={extend}/protect={protect}"
             a_val = Record() if isinstance(idx_path[0], str) \
@@ -3077,7 +3082,7 @@ class _Field:
         return self
 
     def copy(self, deepness=0, root_rec: Record | None = None, root_idx: IdxPathType = (), **kwargs) -> _Field:
-        """ copy the aspects (names, indexes, values, ...) of this field.
+        """ copy the aspects (e.g. names, indexes, values) of this field.
 
         :param deepness:        deep copy level: <0==see deeper(), 0==only copy current instance, >0==deep copy
                                 to deepness value - _Field occupies two deepness: 1st=_Field, 2nd=Value.
@@ -3091,7 +3096,7 @@ class _Field:
             copied = {}
             for asp_key, asp_val in aspects.items():
                 if asp_key.startswith(FAT_VAL) and deeper(deepness, asp_val):
-                    # FAT_VAL.asp_val is field value of ValueType (Value, Records, ...)
+                    # FAT_VAL.asp_val is field value of ValueType (e.g. Value, Records)
                     copied[asp_key] = asp_val.copy(deepness=deeper(deepness, asp_val),
                                                    root_rec=root_rec, root_idx=root_idx, **kwargs)
                 elif asp_key not in (FAT_REC, FAT_RCX):
@@ -3162,7 +3167,7 @@ class _Field:
     # pylint: disable=too-many-arguments,too-many-positional-arguments
     def string_to_records(self, str_val: str, field_names: Sequence, rec_sep: str = ',', fld_sep: str = '=',
                           system: AspectKeyType = '', direction: AspectKeyType = '') -> Records:
-        """ convert formatted string into a :class:`Records` instance containing several :class:`Record` instances.
+        """ convert formatted string into an :class:`Records` instance containing several :class:`Record` instances.
 
         :param str_val:         formatted string to convert.
         :param field_names:     list/tuple of field names of each record
@@ -3222,7 +3227,7 @@ class _Field:
     def in_actions(self, *actions: str, system: AspectKeyType = '', direction: AspectKeyType = '') -> bool:
         """ determine if current data structure is in one of the passed `actions`.
 
-        :param actions:         tuple of actions (see :data:`ACTION_` constants).
+        :param actions:         tuple of actions (see :data:`ACTION_*` constants).
         :param system:          system id (def='' stands for the main/system-independent value).
         :param direction:       direction id (def='' stands for the main/system-independent value).
         :return:                True if the data structure has set one of the passed `actions` else False.

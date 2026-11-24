@@ -1,2 +1,3 @@
 # dependencies of the sys_data portion
+typing_extensions       # remove for CPython >= 3.13
 ae_valid

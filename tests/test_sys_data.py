@@ -482,15 +482,11 @@ class TestValues:
         assert u.node_child(('test',)) is None
         with pytest.raises(AssertionError):
             u.node_child(('test',), moan=True)
-        # noinspection PyTypeChecker
         assert u.node_child('test') is None
         with pytest.raises(AssertionError):
-            # noinspection PyTypeChecker
             u.node_child('test', moan=True)
-        # noinspection PyTypeChecker
         assert u.node_child(0) is None
         with pytest.raises(AssertionError):
-            # noinspection PyTypeChecker
             u.node_child(0, moan=True)
         # noinspection PyTypeChecker
         assert u.node_child(None) is None
