@@ -1,4 +1,4 @@
-# THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.project_tpls v0.3.98
+# THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.project_tpls v0.3.109
 """ setup of ae namespace module portion sys_data: external system data structures. """
 import pathlib
 import sys
@@ -24,16 +24,16 @@ setup_kwargs: dict[str, Any] = {
     'description': 'ae namespace module portion sys_data: external system data structures',
     'extras_require': {
         'dev': [
-            'aedev_project_tpls',
             'ae_ae',
+            'aedev_project_tpls',
             'anybadge',
             'flake8',
             'mypy',
             'pylint',
             'pytest',
             'pytest-cov',
-            'typing',
             'types-setuptools',
+            'typing',
         ],
         'docs': [],
         'tests': [
@@ -48,6 +48,7 @@ setup_kwargs: dict[str, Any] = {
         ],
     },
     'install_requires': [
+        'typing_extensions',
         'ae_valid',
     ],
     'keywords': [
@@ -74,10 +75,10 @@ setup_kwargs: dict[str, Any] = {
     },
     'python_requires': '>=3.12',
     'url': 'https://gitlab.com/ae-group/ae_sys_data',
-    'version': '0.3.16',
+    'version': '0.3.17',
     'zip_safe': True,
 }
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     setuptools.setup(**setup_kwargs)
     ...
